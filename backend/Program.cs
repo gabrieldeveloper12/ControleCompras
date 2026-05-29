@@ -1,0 +1,306 @@
+using backend.Data;
+using backend.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
+using System.Text;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Configuração do SQLite e DbContext
+builder.Services.AddDbContext<ComprasDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Configuração de CORS para permitir chamadas do front-end Vue 3
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
+// Registrar OpenAPI para documentação da API
+builder.Services.AddOpenApi();
+
+// Configuração de Autenticação JWT
+var jwtKey = builder.Configuration["Jwt:Key"] ?? "UmaChaveSuperSecretaParaOControleDeComprasSeguro123!";
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "ControleCompras";
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtIssuer,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+        };
+    });
+builder.Services.AddAuthorization();
+
+var app = builder.Build();
+
+// Rodar migrações e inicializar banco de dados de categorias
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<ComprasDbContext>();
+        
+        // Aplica as migrações pendentes de forma automática
+        context.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Ocorreu um erro ao rodar as migrações ou ao realizar o Seed do banco.");
+    }
+}
+
+// Usar CORS, Autenticação e OpenAPI no pipeline
+app.UseCors("AllowAll");
+app.UseAuthentication();
+app.UseAuthorization();
+
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+}
+
+app.MapGet("/", () => "Controle de Compras API está online e banco de dados configurado!");
+
+// ==========================================
+// AUTH ENDPOINTS
+// ==========================================
+app.MapPost("/api/auth/register", async (RegisterRequest req, ComprasDbContext db) =>
+{
+    if (string.IsNullOrWhiteSpace(req.Email) || string.IsNullOrWhiteSpace(req.Password))
+        return Results.BadRequest("Email e Senha são obrigatórios.");
+
+    if (await db.Usuarios.AnyAsync(u => u.Email == req.Email))
+        return Results.BadRequest("Email já em uso.");
+
+    var user = new Usuario
+    {
+        Email = req.Email,
+        Nome = string.IsNullOrWhiteSpace(req.Nome) ? req.Email : req.Nome,
+        SenhaHash = BCrypt.Net.BCrypt.HashPassword(req.Password)
+    };
+    
+    db.Usuarios.Add(user);
+    await db.SaveChangesAsync();
+    
+    // Create standard categories for the new user
+    db.Categorias.AddRange(
+        new Categoria { Nome = "Mercado", Icone = "🛒", CorHex = "#4CAF50", UsuarioId = user.Id },
+        new Categoria { Nome = "Farmácia", Icone = "💊", CorHex = "#F44336", UsuarioId = user.Id },
+        new Categoria { Nome = "Uber", Icone = "🚗", CorHex = "#2196F3", UsuarioId = user.Id },
+        new Categoria { Nome = "Outros", Icone = "📦", CorHex = "#9E9E9E", UsuarioId = user.Id }
+    );
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new { success = true });
+});
+
+app.MapPost("/api/auth/login", async (LoginRequest req, ComprasDbContext db) =>
+{
+    var user = await db.Usuarios.FirstOrDefaultAsync(u => u.Email == req.Email);
+    if (user == null || !BCrypt.Net.BCrypt.Verify(req.Password, user.SenhaHash))
+        return Results.BadRequest("Credenciais inválidas.");
+
+    var tokenHandler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+    var key = Encoding.UTF8.GetBytes(jwtKey);
+    var tokenDescriptor = new Microsoft.IdentityModel.Tokens.SecurityTokenDescriptor
+    {
+        Subject = new ClaimsIdentity(new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.Name, user.Nome)
+        }),
+        Expires = DateTime.UtcNow.AddHours(8),
+        Issuer = jwtIssuer,
+        Audience = jwtIssuer,
+        SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+    };
+    
+    var token = tokenHandler.CreateToken(tokenDescriptor);
+    return Results.Ok(new 
+    { 
+        token = tokenHandler.WriteToken(token),
+        user = new { id = user.Id, email = user.Email, nome = user.Nome }
+    });
+});
+
+// ==========================================
+// ENDPOINTS DE CATEGORIAS
+// ==========================================
+
+// Listar categorias
+app.MapGet("/api/categorias", async (ClaimsPrincipal user, ComprasDbContext db) => {
+    var userId = int.Parse(user.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+    return await db.Categorias.Where(c => c.UsuarioId == userId).ToListAsync();
+}).RequireAuthorization();
+
+// Criar nova categoria
+app.MapPost("/api/categorias", async (ClaimsPrincipal user, Categoria categoria, ComprasDbContext db) =>
+{
+    var userId = int.Parse(user.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+    if (string.IsNullOrWhiteSpace(categoria.Nome))
+        return Results.BadRequest("O nome da categoria é obrigatório.");
+
+    var existe = await db.Categorias.AnyAsync(c => c.UsuarioId == userId && c.Nome.ToLower() == categoria.Nome.ToLower());
+    if (existe)
+        return Results.BadRequest("Já existe uma categoria com este nome.");
+
+    categoria.UsuarioId = userId;
+    db.Categorias.Add(categoria);
+    await db.SaveChangesAsync();
+    return Results.Created($"/api/categorias/{categoria.Id}", categoria);
+}).RequireAuthorization();
+
+// Atualizar categoria
+app.MapPut("/api/categorias/{id:int}", async (ClaimsPrincipal user, int id, Categoria inputCat, ComprasDbContext db) =>
+{
+    var userId = int.Parse(user.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+    var categoria = await db.Categorias.FirstOrDefaultAsync(c => c.Id == id && c.UsuarioId == userId);
+    if (categoria is null) return Results.NotFound();
+
+    if (string.IsNullOrWhiteSpace(inputCat.Nome))
+        return Results.BadRequest("O nome da categoria é obrigatório.");
+
+    var existeDuplicado = await db.Categorias.AnyAsync(c => c.UsuarioId == userId && c.Id != id && c.Nome.ToLower() == inputCat.Nome.ToLower());
+    if (existeDuplicado)
+        return Results.BadRequest("Já existe outra categoria com este nome.");
+
+    categoria.Nome = inputCat.Nome;
+    categoria.Icone = inputCat.Icone;
+    categoria.CorHex = inputCat.CorHex;
+
+    await db.SaveChangesAsync();
+    return Results.NoContent();
+}).RequireAuthorization();
+
+// Excluir categoria (bloqueia se houver compras vinculadas)
+app.MapDelete("/api/categorias/{id:int}", async (ClaimsPrincipal user, int id, ComprasDbContext db) =>
+{
+    var userId = int.Parse(user.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+    var categoria = await db.Categorias.Include(c => c.Compras).FirstOrDefaultAsync(c => c.Id == id && c.UsuarioId == userId);
+    if (categoria is null) return Results.NotFound();
+
+    if (categoria.Compras.Any())
+        return Results.BadRequest("Não é possível excluir uma categoria que possui compras associadas.");
+
+    db.Categorias.Remove(categoria);
+    await db.SaveChangesAsync();
+    return Results.NoContent();
+}).RequireAuthorization();
+
+// ==========================================
+// ENDPOINTS DE COMPRAS
+// ==========================================
+
+// Listar compras com filtros de data e mês/ano
+app.MapGet("/api/compras", async (
+    ClaimsPrincipal user,
+    int? mes, 
+    int? ano, 
+    DateTime? inicio, 
+    DateTime? fim, 
+    ComprasDbContext db) =>
+{
+    var userId = int.Parse(user.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+    var query = db.Compras.Include(c => c.Categoria).Where(c => c.UsuarioId == userId).AsQueryable();
+
+    if (inicio.HasValue)
+        query = query.Where(c => c.Data >= inicio.Value);
+
+    if (fim.HasValue)
+        query = query.Where(c => c.Data <= fim.Value);
+
+    if (mes.HasValue)
+        query = query.Where(c => c.Data.Month == mes.Value);
+
+    if (ano.HasValue)
+        query = query.Where(c => c.Data.Year == ano.Value);
+
+    var resultado = await query.OrderByDescending(c => c.Data).ToListAsync();
+    return Results.Ok(resultado);
+}).RequireAuthorization();
+
+// Cadastrar nova compra
+app.MapPost("/api/compras", async (ClaimsPrincipal user, Compra compra, ComprasDbContext db) =>
+{
+    var userId = int.Parse(user.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+    if (string.IsNullOrWhiteSpace(compra.Descricao))
+        return Results.BadRequest("A descrição da compra é obrigatória.");
+
+    if (compra.Valor <= 0)
+        return Results.BadRequest("O valor da compra deve ser maior que zero.");
+
+    var categoriaExiste = await db.Categorias.AnyAsync(c => c.Id == compra.CategoriaId && c.UsuarioId == userId);
+    if (!categoriaExiste)
+        return Results.BadRequest("A categoria informada não existe ou não pertence a você.");
+
+    compra.Categoria = null; // Evita reinserção da categoria pelo EF
+    compra.UsuarioId = userId;
+    db.Compras.Add(compra);
+    await db.SaveChangesAsync();
+
+    // Carrega a referência da categoria para o retorno completo do JSON
+    await db.Entry(compra).Reference(c => c.Categoria).LoadAsync();
+
+    return Results.Created($"/api/compras/{compra.Id}", compra);
+}).RequireAuthorization();
+
+// Atualizar compra existente
+app.MapPut("/api/compras/{id:int}", async (ClaimsPrincipal user, int id, Compra inputCompra, ComprasDbContext db) =>
+{
+    var userId = int.Parse(user.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+    var compra = await db.Compras.FirstOrDefaultAsync(c => c.Id == id && c.UsuarioId == userId);
+    if (compra is null) return Results.NotFound();
+
+    if (string.IsNullOrWhiteSpace(inputCompra.Descricao))
+        return Results.BadRequest("A descrição da compra é obrigatória.");
+
+    if (inputCompra.Valor <= 0)
+        return Results.BadRequest("O valor da compra deve ser maior que zero.");
+
+    var categoriaExiste = await db.Categorias.AnyAsync(c => c.Id == inputCompra.CategoriaId && c.UsuarioId == userId);
+    if (!categoriaExiste)
+        return Results.BadRequest("A categoria informada não existe ou não pertence a você.");
+
+    compra.Descricao = inputCompra.Descricao;
+    compra.Valor = inputCompra.Valor;
+    compra.Data = inputCompra.Data;
+    compra.CategoriaId = inputCompra.CategoriaId;
+
+    await db.SaveChangesAsync();
+    return Results.NoContent();
+}).RequireAuthorization();
+
+// Excluir compra
+app.MapDelete("/api/compras/{id:int}", async (ClaimsPrincipal user, int id, ComprasDbContext db) =>
+{
+    var userId = int.Parse(user.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+    var compra = await db.Compras.FirstOrDefaultAsync(c => c.Id == id && c.UsuarioId == userId);
+    if (compra is null) return Results.NotFound();
+
+    db.Compras.Remove(compra);
+    await db.SaveChangesAsync();
+    return Results.NoContent();
+}).RequireAuthorization();
+
+app.Run();
+
+public record LoginRequest(string Email, string Password);
+public record RegisterRequest(string Email, string Password, string Nome);
