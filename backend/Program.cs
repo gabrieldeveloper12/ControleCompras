@@ -8,9 +8,19 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configuração do SQLite e DbContext
+// Configuração do DbContext (PostgreSQL para produção, SQLite para local)
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ComprasDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    if (connectionString != null && (connectionString.Contains("Host=") || connectionString.Contains("Server=") || connectionString.Contains("Database=")))
+    {
+        options.UseNpgsql(connectionString);
+    }
+    else
+    {
+        options.UseSqlite(connectionString);
+    }
+});
 
 // Configuração de CORS para permitir chamadas do front-end Vue 3
 builder.Services.AddCors(options =>
