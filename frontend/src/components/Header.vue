@@ -329,7 +329,7 @@ export default {
   border-radius: var(--radius-sm);
   padding: 0.55rem 0.6rem;
   cursor: pointer;
-  font-family: 'Outfit', 'Inter', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 0.9rem;
   font-weight: 500;
   color: var(--text-secondary);

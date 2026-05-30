@@ -1520,4 +1520,15 @@ export default {
     gap: 0.85rem;
   }
 }
+
+@media (max-width: 480px) {
+  .svg-container {
+    max-width: 200px !important;
+    margin: 0 auto !important;
+  }
+
+  .chart-legend {
+    grid-template-columns: 1fr !important;
+  }
+}
 </style>
