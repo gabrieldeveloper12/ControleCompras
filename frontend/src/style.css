@@ -93,6 +93,11 @@
   border-color: hsla(var(--hue-base) 10% 50% / 0.15);
 }
 
+[data-theme="light"] body::before,
+[data-theme="light"] body::after {
+  display: none !important;
+}
+
 html {
   transition: background-color 0.35s ease, color 0.35s ease;
 }
