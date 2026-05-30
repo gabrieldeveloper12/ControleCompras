@@ -1,6 +1,7 @@
 using backend.Data;
 using backend.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
@@ -67,7 +68,16 @@ using (var scope = app.Services.CreateScope())
         var context = services.GetRequiredService<ComprasDbContext>();
         
         // Garante que o banco e as tabelas estejam criados (funciona tanto para SQLite quanto Postgres)
-        context.Database.EnsureCreated();
+        // Usamos IRelationalDatabaseCreator para criar as tabelas mesmo se a tabela de histórico de migrações já existir
+        var databaseCreator = context.Database.GetService<Microsoft.EntityFrameworkCore.Storage.IRelationalDatabaseCreator>();
+        try
+        {
+            databaseCreator.CreateTables();
+        }
+        catch
+        {
+            // Se as tabelas já existirem, ignoramos o erro e prosseguimos
+        }
     }
     catch (Exception ex)
     {
