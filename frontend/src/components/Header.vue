@@ -24,14 +24,11 @@
         >
           ⚙️
         </button>
-      </div>
 
-      <Teleport to="body">
         <transition name="dropdown">
           <div
             v-if="dropdownOpen"
             class="theme-dropdown"
-            :style="dropdownStyle"
           >
             <p class="dropdown-label">Aparência</p>
 
@@ -56,21 +53,18 @@
             </button>
           </div>
         </transition>
-      </Teleport>
+      </div>
 
       <!-- User Avatar with dropdown -->
       <div class="user-wrapper" ref="userWrapperRef">
         <div class="user-avatar" title="Opções de Usuário" @click="toggleUserDropdown">
           <span class="avatar-icon">👤</span>
         </div>
-      </div>
 
-      <Teleport to="body">
         <transition name="dropdown">
           <div
             v-if="userDropdownOpen"
             class="theme-dropdown"
-            :style="userDropdownStyle"
           >
             <p class="dropdown-label">Sua Conta</p>
             <button class="theme-option text-danger" @click="logout">
@@ -79,7 +73,7 @@
             </button>
           </div>
         </transition>
-      </Teleport>
+      </div>
     </div>
   </header>
 </template>
@@ -101,9 +95,7 @@ export default {
     return {
       dropdownOpen: false,
       userDropdownOpen: false,
-      currentTheme: localStorage.getItem('cc-theme') || 'dark',
-      dropdownStyle: {},
-      userDropdownStyle: {}
+      currentTheme: localStorage.getItem('cc-theme') || 'dark'
     }
   },
 
@@ -118,55 +110,24 @@ export default {
 
   methods: {
     toggleDropdown() {
-      if (!this.dropdownOpen) {
-        this.updateDropdownPosition()
-      }
       this.dropdownOpen = !this.dropdownOpen
       this.userDropdownOpen = false // close other
     },
     toggleUserDropdown() {
-      if (!this.userDropdownOpen) {
-        this.updateUserDropdownPosition()
-      }
       this.userDropdownOpen = !this.userDropdownOpen
       this.dropdownOpen = false // close other
-    },
-
-    updateDropdownPosition() {
-      const wrapper = this.$refs.settingsWrapperRef
-      if (!wrapper) return
-      const rect = wrapper.getBoundingClientRect()
-      this.dropdownStyle = {
-        position: 'fixed',
-        top: `${rect.bottom + 10}px`,
-        right: `${window.innerWidth - rect.right}px`,
-        zIndex: 99999
-      }
-    },
-    updateUserDropdownPosition() {
-      const wrapper = this.$refs.userWrapperRef
-      if (!wrapper) return
-      const rect = wrapper.getBoundingClientRect()
-      this.userDropdownStyle = {
-        position: 'fixed',
-        top: `${rect.bottom + 10}px`,
-        right: `${window.innerWidth - rect.right}px`,
-        zIndex: 99999
-      }
     },
 
     handleOutsideClick(event) {
       if (this.dropdownOpen) {
         const wrapper = this.$refs.settingsWrapperRef
-        const dropdown = document.querySelector('.theme-dropdown')
-        if (wrapper && !wrapper.contains(event.target) && (!dropdown || !dropdown.contains(event.target))) {
+        if (wrapper && !wrapper.contains(event.target)) {
           this.dropdownOpen = false
         }
       }
       if (this.userDropdownOpen) {
         const wrapper = this.$refs.userWrapperRef
-        const dropdown = document.querySelectorAll('.theme-dropdown')[1] || document.querySelector('.theme-dropdown')
-        if (wrapper && !wrapper.contains(event.target) && (!dropdown || !dropdown.contains(event.target))) {
+        if (wrapper && !wrapper.contains(event.target)) {
           this.userDropdownOpen = false
         }
       }
@@ -239,7 +200,7 @@ export default {
   font-weight: 500;
   padding: 0.4rem 0.8rem;
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-1);
   border: 1px solid var(--border-glass);
 }
 
@@ -275,7 +236,7 @@ export default {
 }
 
 .settings-btn {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-2);
   border: 1px solid var(--border-glass);
   border-radius: var(--radius-sm);
   padding: 0.4rem 0.55rem;
@@ -291,7 +252,7 @@ export default {
 .settings-btn:hover,
 .settings-btn.active {
   transform: rotate(180deg);
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--surface-4);
   box-shadow: 0 0 12px var(--primary-glow);
 }
 
@@ -315,9 +276,9 @@ export default {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--surface-3);
   border: 2px solid var(--border-glass);
-  box-shadow: 0 0 10px var(--primary-glow), inset 0 1px 0 rgba(255,255,255,0.1);
+  box-shadow: 0 0 10px var(--primary-glow), inset 0 1px 0 var(--border-glass);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -331,24 +292,12 @@ export default {
   box-shadow: 0 0 18px var(--primary-glow);
 }
 
-/* ── Responsive ── */
-@media (max-width: 600px) {
-  .header {
-    flex-direction: column;
-    gap: 1rem;
-    padding: 1.2rem;
-    align-items: flex-start;
-  }
-
-  .header-right {
-    align-self: flex-end;
-  }
-}
-</style>
-
-<!-- Unscoped: dropdown is teleported to <body>, scoped CSS won't reach it -->
-<style>
+/* ── Dropdown (nested absolutely inside settings-wrapper or user-wrapper) ── */
 .theme-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 99999;
   width: 175px;
   background: var(--bg-card);
   backdrop-filter: blur(20px);
@@ -387,7 +336,7 @@ export default {
 }
 
 .theme-option:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--surface-4);
   color: var(--text-primary);
 }
 
@@ -416,5 +365,19 @@ export default {
 }
 .text-danger:hover {
   background: rgba(255, 59, 48, 0.15) !important;
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .header {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.2rem;
+    align-items: flex-start;
+  }
+
+  .header-right {
+    align-self: flex-end;
+  }
 }
 </style>

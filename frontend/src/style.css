@@ -77,6 +77,20 @@
   --overlay-bg: rgba(0, 0, 0, 0.4);
   --calendar-icon-filter: invert(0) brightness(0.4) opacity(0.8);
   --calendar-icon-filter-hover: invert(0) brightness(0.2) opacity(1);
+
+  /* Subtle ambient glows for light theme */
+  --primary-glow: hsla(263 80% 62% / 0.06);
+  --secondary-glow: hsla(192 90% 50% / 0.06);
+}
+
+[data-theme="light"] .btn-secondary {
+  background: var(--surface-3);
+  border-color: var(--border-glass);
+}
+
+[data-theme="light"] .btn-secondary:hover {
+  background: var(--surface-4);
+  border-color: hsla(var(--hue-base) 10% 50% / 0.15);
 }
 
 html {
