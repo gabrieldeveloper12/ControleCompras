@@ -166,6 +166,8 @@ export default {
   border-radius: var(--radius-md);
   margin-bottom: 2rem;
   background: var(--bg-card);
+  position: relative;
+  z-index: 1000;
 }
 
 .logo {
