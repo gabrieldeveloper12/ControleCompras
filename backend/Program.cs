@@ -66,8 +66,8 @@ using (var scope = app.Services.CreateScope())
     {
         var context = services.GetRequiredService<ComprasDbContext>();
         
-        // Aplica as migrações pendentes de forma automática
-        context.Database.Migrate();
+        // Garante que o banco e as tabelas estejam criados (funciona tanto para SQLite quanto Postgres)
+        context.Database.EnsureCreated();
     }
     catch (Exception ex)
     {
