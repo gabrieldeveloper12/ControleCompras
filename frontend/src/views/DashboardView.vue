@@ -1230,7 +1230,7 @@ export default {
 
 .chart-content {
   display: grid;
-  grid-template-columns: 180px 1fr;
+  grid-template-columns: 160px 1fr;
   gap: 2rem;
   align-items: center;
 }
@@ -1300,8 +1300,8 @@ export default {
 .chart-legend {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  max-height: 200px;
+  gap: 0.6rem;
+  max-height: 220px;
   overflow-y: auto;
   padding-right: 0.5rem;
 }
@@ -1309,12 +1309,19 @@ export default {
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
-  padding: 0.5rem;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  padding: 0.45rem 0.75rem;
   border-radius: var(--radius-sm);
   background: var(--surface-1);
   border: 1px solid var(--border-glass);
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.legend-item:hover {
+  background: var(--surface-2);
+  border-color: var(--border-glass-focus);
+  transform: translateX(2px);
 }
 
 .legend-dot {
@@ -1326,6 +1333,7 @@ export default {
 
 .legend-emoji {
   font-size: 1.1rem;
+  flex-shrink: 0;
 }
 
 .legend-name {
@@ -1347,11 +1355,12 @@ export default {
 }
 
 .legend-pct {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   background: var(--surface-3);
-  padding: 0.1rem 0.3rem;
+  padding: 0.12rem 0.35rem;
   border-radius: 4px;
   color: var(--text-secondary);
+  flex-shrink: 0;
 }
 
 /* SECTION 2: INTERACTION GRID */
@@ -1894,8 +1903,6 @@ export default {
     margin: 0 auto !important;
   }
 
-  .chart-legend {
-    grid-template-columns: 1fr !important;
-  }
+  /* O layout já é flex-col por padrão */
 }
 </style>
