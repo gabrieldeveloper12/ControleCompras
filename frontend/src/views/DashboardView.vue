@@ -139,6 +139,7 @@
                   type="text" 
                   inputmode="decimal"
                   v-model="valorExibido" 
+                  @input="onValorInput"
                   class="input-control" 
                   :class="{ 'valid': isValorValid, 'invalid': isValorInvalid }"
                   :disabled="isSubmitting"
@@ -803,6 +804,20 @@ export default {
           this.valorExibido = this.formatDecimalBrl(parsed);
         }
       }
+    },
+    onValorInput() {
+      let val = this.valorExibido || '';
+      let cleaned = val.replace(/[^0-9.,]/g, '');
+      
+      let firstSeparatorIndex = cleaned.search(/[.,]/);
+      if (firstSeparatorIndex !== -1) {
+        let separator = cleaned[firstSeparatorIndex];
+        let before = cleaned.substring(0, firstSeparatorIndex);
+        let after = cleaned.substring(firstSeparatorIndex + 1).replace(/[.,]/g, '');
+        cleaned = before + separator + after;
+      }
+      
+      this.valorExibido = cleaned;
     },
 
     // Utility Dates Helper
