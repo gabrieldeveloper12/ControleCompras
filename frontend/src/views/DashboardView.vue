@@ -191,13 +191,12 @@
 
             <div class="form-actions">
               <button 
-                v-if="editMode" 
                 type="button" 
                 class="btn btn-secondary" 
                 :disabled="isSubmitting"
                 @click="cancelEdit"
               >
-                Cancelar
+                {{ editMode ? 'Cancelar' : 'Limpar' }}
               </button>
               <button 
                 type="submit" 
