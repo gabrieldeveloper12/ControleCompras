@@ -1113,11 +1113,18 @@ export default {
     setTimeout(() => {
       this.animateChart = true;
     }, 150);
-    
     // Loop de verificação de status do servidor a cada 10 segundos
     setInterval(async () => {
       await this.checkApiStatus();
     }, 10000);
+
+    // Foco automático programático no campo de descrição para início rápido da digitação
+    this.$nextTick(() => {
+      const inputDesc = document.getElementById('descricao');
+      if (inputDesc) {
+        inputDesc.focus();
+      }
+    });
   }
 }
 </script>
