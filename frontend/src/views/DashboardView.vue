@@ -273,6 +273,12 @@
             <button class="btn btn-secondary clear-filters-btn" @click="resetFilters">
               🧹 Limpar Filtros
             </button>
+
+            <!-- Filter Status Active Card -->
+            <div class="filter-status-card">
+              <span class="filter-status-icon">🔍</span>
+              <span class="filter-status-text">{{ periodoAtivoTexto }}</span>
+            </div>
           </div>
         </div>
       </section>
@@ -505,8 +511,8 @@ export default {
       // Filtros
       filtroTipo: 'mes',
       filtroMesAno: new Date().toISOString().substring(0, 7),
-      filtroDataInicio: new Date().toISOString().split('T')[0],
-      filtroDataFim: new Date().toISOString().split('T')[0],
+      filtroDataInicio: '',
+      filtroDataFim: '',
       
       // Form Compra
       formCompra: {
@@ -595,7 +601,7 @@ export default {
       // 1.4: Filter by debounced search query (case-insensitive on descricao)
       const q = (this.debouncedSearchQuery || '').trim().toLowerCase();
       if (q) {
-        list = list.filter(c => c.descricao.toLowerCase().includes(q));
+        list = list.filter(c => c.descricao && c.descricao.toLowerCase().includes(q));
       }
 
       // 2.3: Sort by sortKey in sortAsc direction
@@ -607,6 +613,8 @@ export default {
             va = a.categoria?.nome || '';
             vb = b.categoria?.nome || '';
           }
+          if (va === null || va === undefined) va = '';
+          if (vb === null || vb === undefined) vb = '';
           if (typeof va === 'string') va = va.toLowerCase();
           if (typeof vb === 'string') vb = vb.toLowerCase();
           if (va < vb) return this.sortAsc ? -1 : 1;
@@ -616,6 +624,40 @@ export default {
       }
 
       return list;
+    },
+    periodoAtivoTexto() {
+      if (this.filtroTipo === 'mes') {
+        if (!this.filtroMesAno) return 'Exibindo todos os registros';
+        const [ano, mes] = this.filtroMesAno.split('-');
+        const meses = [
+          'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+          'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ];
+        const nomeMes = meses[parseInt(mes) - 1];
+        return `Exibindo compras de ${nomeMes} de ${ano}`;
+      } else if (this.filtroTipo === 'periodo') {
+        const formatarData = (dt) => {
+          if (!dt) return '';
+          const [ano, mes, dia] = dt.split('-');
+          return `${dia}/${mes}/${ano}`;
+        };
+        
+        const ini = formatarData(this.filtroDataInicio);
+        const fim = formatarData(this.filtroDataFim);
+        
+        if (ini && fim) {
+          if (this.filtroDataInicio === this.filtroDataFim) {
+            return `Exibindo compras do dia ${ini}`;
+          }
+          return `Exibindo compras de ${ini} até ${fim}`;
+        } else if (ini) {
+          return `Exibindo compras realizadas a partir de ${ini}`;
+        } else if (fim) {
+          return `Exibindo compras realizadas até ${fim}`;
+        }
+        return 'Exibindo todos os registros de compras';
+      }
+      return 'Exibindo compras';
     },
     totalGastos() {
       return this.compras.reduce((sum, c) => sum + c.valor, 0);
@@ -808,8 +850,12 @@ export default {
         const params = [];
         
         if (this.filtroTipo === 'periodo') {
-          if (this.filtroDataInicio) params.push(`inicio=${this.filtroDataInicio}`);
-          if (this.filtroDataFim) params.push(`fim=${this.filtroDataFim}`);
+          if (this.filtroDataInicio && this.filtroDataInicio !== 'null' && this.filtroDataInicio !== 'undefined') {
+            params.push(`inicio=${this.filtroDataInicio}`);
+          }
+          if (this.filtroDataFim && this.filtroDataFim !== 'null' && this.filtroDataFim !== 'undefined') {
+            params.push(`fim=${this.filtroDataFim}`);
+          }
         } else if (this.filtroTipo === 'mes' && this.filtroMesAno) {
           const [year, month] = this.filtroMesAno.split('-');
           params.push(`mes=${parseInt(month)}`);
@@ -843,8 +889,8 @@ export default {
     resetFilters() {
       this.filtroTipo = 'mes';
       this.filtroMesAno = new Date().toISOString().substring(0, 7);
-      this.filtroDataInicio = this.getTodayDateString();
-      this.filtroDataFim = this.getTodayDateString();
+      this.filtroDataInicio = '';
+      this.filtroDataFim = '';
       this.fetchCompras();
     },
 

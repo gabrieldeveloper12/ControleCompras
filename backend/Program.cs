@@ -241,11 +241,19 @@ app.MapGet("/api/compras", async (
     var userId = int.Parse(user.FindFirst(ClaimTypes.NameIdentifier)!.Value);
     var query = db.Compras.Include(c => c.Categoria).Where(c => c.UsuarioId == userId).AsQueryable();
 
+    Console.WriteLine($"[API] GetCompras: inicio={inicio}, fim={fim}, mes={mes}, ano={ano}");
+
     if (inicio.HasValue)
-        query = query.Where(c => c.Data >= inicio.Value);
+    {
+        var dataInicio = inicio.Value.Date;
+        query = query.Where(c => c.Data >= dataInicio);
+    }
 
     if (fim.HasValue)
-        query = query.Where(c => c.Data <= fim.Value);
+    {
+        var dataFim = fim.Value.Date.AddDays(1);
+        query = query.Where(c => c.Data < dataFim);
+    }
 
     if (mes.HasValue)
         query = query.Where(c => c.Data.Month == mes.Value);
