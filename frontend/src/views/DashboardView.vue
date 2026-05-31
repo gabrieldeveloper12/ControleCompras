@@ -1412,19 +1412,6 @@ export default {
   gap: 1rem;
 }
 
-.select-control {
-  cursor: pointer;
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.6)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 1rem center;
-  background-size: 1.2rem;
-  padding-right: 2.5rem;
-}
-
-[data-theme="light"] .select-control {
-  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(0,0,0,0.45)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-}
 
 [data-theme="light"] .btn-secondary {
   background: var(--surface-3);
@@ -1434,11 +1421,6 @@ export default {
 [data-theme="light"] .btn-secondary:hover {
   background: var(--surface-4);
   border-color: hsla(var(--hue-base) 10% 50% / 0.15);
-}
-
-.select-control option {
-  background: var(--bg-input);
-  color: var(--text-primary);
 }
 
 .form-actions {
