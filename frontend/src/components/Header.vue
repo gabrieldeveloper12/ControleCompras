@@ -11,7 +11,7 @@
     <div class="header-right">
       <div class="api-status">
         <span class="status-indicator" :class="{ online: isOnline }"></span>
-        <span class="status-text">{{ isOnline ? 'Servidor Conectado' : 'Conectando...' }}</span>
+        <span class="status-text">{{ isOnline ? 'Online' : 'Conectando...' }}</span>
       </div>
 
       <!-- Settings gear with teleported theme dropdown -->
