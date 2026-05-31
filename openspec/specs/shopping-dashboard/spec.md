@@ -115,3 +115,74 @@ Em larguras de telas de celulares inferiores a 640px, a lista de lançamentos de
 - **WHEN** a largura de tela do navegador for menor que 640px
 - **THEN** a tabela de registros SHALL ficar oculta e cada compra SHALL ser exibida como um card tátil contendo descrição, valor BRL realçado, tag da categoria com emoji, data e botões de ação (editar/deletar) com área de toque mínima de 44px.
 
+### Requirement: Dicas e Validação Inline de Inputs
+Todos os campos do formulário de lançamento de compra SHALL exibir um texto de ajuda (hint/placeholder descritivo) abaixo do campo detalhando o formato esperado (ex: "ex: Supermercado", "ex: R$ 29,90") e aplicar estilização de validação inline instantânea (borda verde para entrada válida e borda vermelha para entrada inválida ou vazia).
+
+#### Scenario: Preenchimento de campo de descrição válido
+- **WHEN** o usuário digita uma descrição com 3 ou mais caracteres no campo correspondente
+- **THEN** a caixa de texto SHALL exibir uma borda verde indicando validação de sucesso.
+
+#### Scenario: Preenchimento de valor inválido
+- **WHEN** o usuário deixa o campo de valor vazio ou digita zero/número negativo
+- **THEN** o campo de valor SHALL exibir uma borda vermelha indicando estado de erro visual.
+
+### Requirement: Prevenção de Envio Duplo e Feedback de Envio
+O botão de submissão do formulário de compras ("Salvar") SHALL ter seu estado alterado para `disabled` (desabilitado para cliques) e exibir uma mensagem de processamento (como "Salvando..." acompanhada de um ícone spinner) enquanto a requisição de API estiver pendente, eliminando cliques repetitivos e registros duplicados.
+
+#### Scenario: Clicando em salvar formulário válido
+- **WHEN** o usuário clica no botão de salvar com dados corretos no formulário
+- **THEN** o botão de salvar SHALL se desabilitar imediatamente e exibir "Salvando..." com um spinner animado até a resposta do servidor.
+
+### Requirement: Componente de Alertas Toast Dinâmicos
+A aplicação SHALL disponibilizar um sistema de notificações flutuantes (Toast Notifications) posicionado estrategicamente na tela (canto inferior direito no desktop e barra inferior cheia no mobile) para emitir alertas reativos instantâneos de sucesso, erro ou aviso nas ações de criar, editar ou excluir compras e categorias, com fechamento automático após 3 segundos.
+
+#### Scenario: Notificação de sucesso ao cadastrar compra
+- **WHEN** uma nova compra é adicionada com sucesso no sistema
+- **THEN** um toast de sucesso com a mensagem "Compra cadastrada com sucesso!" SHALL surgir na tela e desaparecer automaticamente após 3 segundos.
+
+### Requirement: Tooltips Interativos e Entrada Suave no Donut Chart
+O gráfico donut de categorias SHALL possuir uma animação de entrada suave ao carregar a página (crescimento radial das fatias utilizando o atributo `stroke-dasharray` transicionando de zero ao valor final) e expor um painel flutuante de informações (Tooltip) reativo ao passar o cursor ou tocar (touch) em cada segmento, exibindo o nome da categoria, valor absoluto em R$ e o percentual correspondente.
+
+#### Scenario: Hover ou toque em um segmento do gráfico
+- **WHEN** o usuário posiciona o cursor ou toca em um segmento colorido do Donut Chart
+- **THEN** um tooltip flutuante SHALL surgir imediatamente na tela contendo as informações legíveis de nome da categoria, valor total e porcentagem daquele grupo de gastos.
+
+### Requirement: Opacidade de Ambient Orbs no Tema Claro
+Quando o tema claro ("light") estiver ativo, os indicadores de ambientação luminosa de fundo (`body::before` e `body::after`) SHALL ter sua opacidade drasticamente reduzida para no máximo 8% (0.08 alpha) para garantir contraste tipográfico excelente e aparência de tema claro autêntico.
+
+#### Scenario: Visualização do tema claro com ambient orbs sutis
+- **WHEN** o usuário seleciona o tema "Claro"
+- **THEN** o plano de fundo SHALL reduzir a opacidade das luzes de ambientação decorativas de fundo para evitar uma saturação escura/roxa de fundo.
+
+### Requirement: Contraste de Botões Secundários no Tema Claro
+Os botões secundários (`.btn-secondary`, como "Gerenciar Categorias", "Limpar Filtros" e "Cancelar") SHALL ter fundo de cor clara com contraste e legibilidade suficientes contra a cor de texto escuro sob o tema claro ("light") da aplicação.
+
+#### Scenario: Contraste do botão secundário no tema claro
+- **WHEN** o tema claro estiver ativo e um botão secundário for renderizado
+- **THEN** a sua cor de texto SHALL possuir excelente contraste com um fundo claro de botão para perfeita leitura.
+
+### Requirement: Variáveis Semânticas do Cabeçalho no Tema Claro
+Os elementos visuais do cabeçalho (incluindo status da API, botão de engrenagem, avatar e hovers do dropdown de temas) SHALL utilizar variáveis semânticas CSS (`var(--surface-X)`) no lugar de opacidades estáticas brancas, garantindo contrastes e realces de hover visíveis no tema claro.
+
+#### Scenario: Hover sobre opção do dropdown no tema claro
+- **WHEN** o usuário passa o mouse ou toca em uma opção de tema no dropdown sob o tema claro
+- **THEN** o fundo de destaque do hover SHALL ser visível usando uma matiz escura sutil sobre o fundo claro.
+
+### Requirement: Alinhamento dos Dropdowns no Scroll do Celular
+Os dropdowns de configurações de tema e do usuário no cabeçalho SHALL ser posicionados absolutamente em relação aos seus contêineres wrappers pais (`.settings-wrapper` e `.user-wrapper`), de forma que rolem nativa e perfeitamente junto com o cabeçalho em dispositivos móveis, sem flutuar soltos e fixos no meio da viewport.
+
+#### Scenario: Rolagem da página com dropdown aberto no celular
+- **WHEN** o usuário abre um dropdown no cabeçalho e rola a tela
+- **THEN** o painel de dropdown SHALL manter o alinhamento perfeito com o seu respectivo ícone acionador e rolar suavemente com a página.
+
+### Requirement: Cabeçalho com Configurações e Avatar do Usuário
+O cabeçalho principal SHALL conter uma seção à direita agrupando o status de conexão da API, um botão de engrenagem (`⚙️`) interativo para configurações rápidas, e um avatar circular que simula o perfil do usuário logado contendo dicas acessíveis (ex: "Gabriel Ramos").
+
+#### Scenario: Rotação interativa da engrenagem
+- **WHEN** o usuário passa o mouse (hover) sobre o botão de engrenagem no cabeçalho
+- **THEN** a engrenagem SHALL rotacionar suavemente em 180 graus e destacar sua cor utilizando o brilho primário.
+
+#### Scenario: Integração do botão de engrenagem com modal de categorias
+- **WHEN** o usuário clica no botão de engrenagem no cabeçalho
+- **THEN** a interface SHALL disparar um evento customizado que abre o modal de gerenciamento de categorias na tela principal para centralizar as configurações do dashboard.
+
