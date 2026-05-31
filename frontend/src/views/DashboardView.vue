@@ -1298,9 +1298,9 @@ export default {
 }
 
 .chart-legend {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
   max-height: 200px;
   overflow-y: auto;
   padding-right: 0.5rem;
@@ -1335,12 +1335,15 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
 }
 
 .legend-value {
   color: var(--text-secondary);
   font-weight: 600;
   margin-right: 0.5rem;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .legend-pct {
