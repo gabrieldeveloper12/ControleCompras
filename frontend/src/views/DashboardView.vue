@@ -511,8 +511,8 @@ export default {
       // Filtros
       filtroTipo: 'mes',
       filtroMesAno: new Date().toISOString().substring(0, 7),
-      filtroDataInicio: '',
-      filtroDataFim: '',
+      filtroDataInicio: this.getTodayDateString(),
+      filtroDataFim: this.getTodayDateString(),
       
       // Form Compra
       formCompra: {
@@ -889,8 +889,8 @@ export default {
     resetFilters() {
       this.filtroTipo = 'mes';
       this.filtroMesAno = new Date().toISOString().substring(0, 7);
-      this.filtroDataInicio = '';
-      this.filtroDataFim = '';
+      this.filtroDataInicio = this.getTodayDateString();
+      this.filtroDataFim = this.getTodayDateString();
       this.fetchCompras();
     },
 
