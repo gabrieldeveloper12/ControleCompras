@@ -1,0 +1,112 @@
+
+<style>
+.section { margin-bottom: 2rem; }
+.section-title { font-size: 13px; font-weight: 500; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 1rem; padding-bottom: 6px; border-bottom: 0.5px solid var(--color-border-tertiary); }
+.card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; margin-bottom: 12px; }
+.card-title { font-size: 14px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+.card-body { font-size: 13px; color: var(--color-text-secondary); line-height: 1.6; }
+.badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 20px; }
+.badge-warn { background: var(--color-background-warning); color: var(--color-text-warning); }
+.badge-danger { background: var(--color-background-danger); color: var(--color-text-danger); }
+.badge-info { background: var(--color-background-info); color: var(--color-text-info); }
+.badge-success { background: var(--color-background-success); color: var(--color-text-success); }
+.before-after { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.ba-block { padding: 10px 12px; border-radius: var(--border-radius-md); font-size: 12px; line-height: 1.5; }
+.before { background: var(--color-background-danger); color: var(--color-text-danger); border-left: 3px solid currentColor; }
+.after { background: var(--color-background-success); color: var(--color-text-success); border-left: 3px solid currentColor; }
+.ba-label { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; opacity: 0.7; }
+.palette { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.swatch { width: 32px; height: 32px; border-radius: 6px; border: 0.5px solid var(--color-border-tertiary); flex-shrink: 0; }
+.swatch-label { font-size: 10px; color: var(--color-text-secondary); margin-top: 3px; text-align: center; }
+.swatch-group { text-align: center; }
+.priority-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+.priority-num { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; flex-shrink: 0; background: var(--color-background-info); color: var(--color-text-info); margin-top: 1px; }
+</style>
+
+<h2 class="sr-only">Análise de UI/UX para redesign do ControleCompras</h2>
+
+<div class="section">
+  <div class="section-title">Problemas críticos identificados</div>
+
+  <div class="card">
+    <div class="card-title"><i class="ti ti-typography" aria-hidden="true"></i> Tipografia <span class="badge badge-danger">Alta prioridade</span></div>
+    <div class="card-body">
+      <div class="before-after">
+        <div class="ba-block before"><div class="ba-label">Atual</div>Font padrão do sistema, sem hierarquia visual clara, MAIÚSCULAS em labels como "E-MAIL", "SENHA" — cria ruído e parece formulário anos 2000</div>
+        <div class="ba-block after"><div class="ba-label">Sugestão</div>Inter (Google Fonts) — padrão de apps fintech modernos. Labels em sentence case, peso 400/500/600. Títulos de seção em 11px uppercase com letter-spacing, não os campos.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><i class="ti ti-layout-grid" aria-hidden="true"></i> Layout responsivo <span class="badge badge-danger">Alta prioridade</span></div>
+    <div class="card-body">
+      O dashboard usa dois painéis side-by-side fixos sem breakpoints claros. Em tablets/mobile o formulário "Registrar Compra" e "Filtros" ficam espremidos. A tabela de registros não tem scroll horizontal — quebrará em telas menores.
+      <div class="before-after">
+        <div class="ba-block before"><div class="ba-label">Atual</div>Grid fixo 2 colunas, sem media queries efetivas, tabela sem <code>overflow-x: auto</code></div>
+        <div class="ba-block after"><div class="ba-label">Sugestão</div>CSS Grid com <code>grid-template-columns: repeat(auto-fit, minmax(320px, 1fr))</code>. Mobile-first: formulário empilha acima dos filtros. Tabela em wrapper com scroll.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><i class="ti ti-palette" aria-hidden="true"></i> Paleta de cores <span class="badge badge-warn">Média prioridade</span></div>
+    <div class="card-body">
+      Roxo vibrante (#7c3aed aprox.) como CTA principal funciona, mas os cards de stats usam fundos muito escuros e baixo contraste entre texto secundário e fundo. O fundo do app é quase preto puro — cansativo para uso prolongado.
+      <div class="palette">
+        <div class="swatch-group"><div class="swatch" style="background:#0f0d1a"></div><div class="swatch-label">Atual BG</div></div>
+        <div class="swatch-group"><div class="swatch" style="background:#0d1117"></div><div class="swatch-label">GitHub Dark</div></div>
+        <div class="swatch-group"><div class="swatch" style="background:#111827"></div><div class="swatch-label">Tailwind 900</div></div>
+        <div class="swatch-group"><div class="swatch" style="background:#1a1b2e"></div><div class="swatch-label">Sugerido</div></div>
+        <div class="swatch-group"><div class="swatch" style="background:#7c3aed"></div><div class="swatch-label">Primária</div></div>
+        <div class="swatch-group"><div class="swatch" style="background:#8b5cf6"></div><div class="swatch-label">Hover</div></div>
+        <div class="swatch-group"><div class="swatch" style="background:#4ade80"></div><div class="swatch-label">Success</div></div>
+        <div class="swatch-group"><div class="swatch" style="background:#f59e0b"></div><div class="swatch-label">Warning</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><i class="ti ti-forms" aria-hidden="true"></i> Formulário de entrada <span class="badge badge-warn">Média prioridade</span></div>
+    <div class="card-body">
+      Campos sem ícones de apoio visual, sem estados de erro visíveis, sem feedback de validação inline. O botão "Salvar Compra" não tem estado de loading após submit.
+      <div class="before-after">
+        <div class="ba-block before"><div class="ba-label">Atual</div>Input simples, sem prefix icon, sem hint text, sem validação em tempo real</div>
+        <div class="ba-block after"><div class="ba-label">Sugestão</div>Prefix icon nos inputs (R$ no valor, calendário na data), hint text abaixo do campo, border-color muda para verde/vermelho on validate, botão vira spinner no submit</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Melhorias de UX / interação</div>
+
+  <div class="card">
+    <div class="card-title"><i class="ti ti-chart-donut" aria-hidden="true"></i> Gráfico de distribuição <span class="badge badge-info">Melhoria</span></div>
+    <div class="card-body">O donut chart atual é funcional mas genérico. Adicionar: hover com tooltip detalhado, animação de entrada (<code>stroke-dasharray</code> de 0 ao valor), legenda com porcentagem calculada dinamicamente ao mudar filtro. Considerar um chart de barras horizontais como alternativa — mais legível em mobile.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><i class="ti ti-table" aria-hidden="true"></i> Tabela de registros <span class="badge badge-info">Melhoria</span></div>
+    <div class="card-body">Sem paginação, sem ordenação por coluna, sem busca inline. Em mobile, substituir tabela por cards empilhados (cada compra vira um card com ícone da categoria, valor em destaque e ações inline).</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><i class="ti ti-bell" aria-hidden="true"></i> Feedback de ações <span class="badge badge-info">Melhoria</span></div>
+    <div class="card-body">Adicionar toast notifications (bottom-right, auto-dismiss em 3s) para confirmar salvar/deletar compras. Usar biblioteca como <code>vue-toastification</code> ou implementar com Teleport nativo do Vue 3.</div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Roadmap de implementação sugerido</div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="priority-row"><div class="priority-num">1</div><div><strong>Tipografia</strong> — importar Inter via @fontsource/inter no Vite, aplicar no CSS global. Normalizar labels para sentence case. 30min de trabalho.</div></div>
+      <div class="priority-row"><div class="priority-num">2</div><div><strong>Responsividade</strong> — refatorar o grid do dashboard com CSS Grid auto-fit. Adicionar breakpoint mobile-first em 640px. Encapsular tabela em <code>&lt;div style="overflow-x:auto"&gt;</code>.</div></div>
+      <div class="priority-row"><div class="priority-num">3</div><div><strong>Paleta refinada</strong> — ajustar CSS variables no :root. Usar <code>--bg-primary: #1a1b2e</code>, <code>--bg-surface: #1e2035</code>, <code>--bg-card: #252641</code> para criar profundidade com múltiplos níveis de superfície.</div></div>
+      <div class="priority-row"><div class="priority-num">4</div><div><strong>Micro-interações</strong> — hover states nos botões de ação da tabela (escala 1.1 no ícone), transição smooth no dropdown de categoria, animação no donut chart ao carregar dados.</div></div>
+      <div class="priority-row"><div class="priority-num">5</div><div><strong>Mobile table → cards</strong> — usar <code>v-if="isMobile"</code> computed com <code>window.innerWidth &lt; 640</code> para renderizar cards no lugar da tabela em telas pequenas.</div></div>
+    </div>
+  </div>
+</div>

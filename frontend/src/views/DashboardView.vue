@@ -287,22 +287,56 @@
             <p>Nenhuma compra registrada neste período.</p>
           </div>
           
-          <table v-else class="purchase-table">
-            <thead>
-              <tr>
-                <th>Descrição</th>
-                <th>Categoria</th>
-                <th>Data</th>
-                <th class="text-right">Valor</th>
-                <th class="text-center">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="compra in filteredCompras" :key="compra.id" class="table-row">
-                <td class="col-desc">
-                  <strong>{{ compra.descricao }}</strong>
-                </td>
-                <td class="col-cat">
+          <template v-else>
+            <!-- Desktop Table View -->
+            <table class="purchase-table">
+              <thead>
+                <tr>
+                  <th>Descrição</th>
+                  <th>Categoria</th>
+                  <th>Data</th>
+                  <th class="text-right">Valor</th>
+                  <th class="text-center">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="compra in filteredCompras" :key="compra.id" class="table-row">
+                  <td class="col-desc">
+                    <strong>{{ compra.descricao }}</strong>
+                  </td>
+                  <td class="col-cat">
+                    <span 
+                      class="category-tag" 
+                      :style="{ 
+                        borderLeft: `4px solid ${compra.categoria?.corHex || '#999'}`,
+                        backgroundColor: `${compra.categoria?.corHex || '#999'}15`
+                      }"
+                    >
+                      <span class="tag-icon">{{ compra.categoria?.icone }}</span>
+                      <span class="tag-name">{{ compra.categoria?.nome }}</span>
+                    </span>
+                  </td>
+                  <td class="col-date">{{ formatDate(compra.data) }}</td>
+                  <td class="col-val text-right">
+                    <strong>{{ formatCurrency(compra.valor) }}</strong>
+                  </td>
+                  <td class="col-actions text-center">
+                    <button class="action-btn edit" @click="startEdit(compra)" title="Editar">✏️</button>
+                    <button class="action-btn delete" @click="deleteCompra(compra.id)" title="Excluir">❌</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- Mobile Cards View -->
+            <div class="purchase-cards-mobile">
+              <div 
+                v-for="compra in filteredCompras" 
+                :key="compra.id" 
+                class="purchase-card glass-panel"
+              >
+                <div class="card-header-row">
+                  <strong class="card-description">{{ compra.descricao }}</strong>
                   <span 
                     class="category-tag" 
                     :style="{ 
@@ -313,18 +347,30 @@
                     <span class="tag-icon">{{ compra.categoria?.icone }}</span>
                     <span class="tag-name">{{ compra.categoria?.nome }}</span>
                   </span>
-                </td>
-                <td class="col-date">{{ formatDate(compra.data) }}</td>
-                <td class="col-val text-right">
-                  <strong>{{ formatCurrency(compra.valor) }}</strong>
-                </td>
-                <td class="col-actions text-center">
-                  <button class="action-btn edit" @click="startEdit(compra)" title="Editar">✏️</button>
-                  <button class="action-btn delete" @click="deleteCompra(compra.id)" title="Excluir">❌</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                </div>
+                
+                <div class="card-body-row">
+                  <div class="card-info-item">
+                    <span class="card-label">Data</span>
+                    <span class="card-value">{{ formatDate(compra.data) }}</span>
+                  </div>
+                  <div class="card-info-item text-right">
+                    <span class="card-label">Valor</span>
+                    <strong class="card-value highlight">{{ formatCurrency(compra.valor) }}</strong>
+                  </div>
+                </div>
+                
+                <div class="card-actions-row">
+                  <button class="btn btn-secondary action-btn-tátil" @click="startEdit(compra)">
+                    <span>✏️ Editar</span>
+                  </button>
+                  <button class="btn btn-danger action-btn-tátil" @click="deleteCompra(compra.id)">
+                    <span>❌ Excluir</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </template>
         </div>
       </section>
     </main>
