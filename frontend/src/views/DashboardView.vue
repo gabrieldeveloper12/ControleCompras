@@ -139,13 +139,15 @@
                   type="text" 
                   inputmode="decimal"
                   v-model="valorExibido" 
-                  @input="onValorInput"
+                  @input="onValorInput($event)"
+                  @click="onValorClick($event)"
+                  @keyup="onValorKeyup($event)"
                   class="input-control" 
                   :class="{ 'valid': isValorValid, 'invalid': isValorInvalid }"
                   :disabled="isSubmitting"
                   placeholder="0,00"
                   required
-                  @focus="onValorFocus"
+                  @focus="onValorFocus($event)"
                   @blur="onValorBlur"
                 />
                 <span class="input-hint" :class="{ 'error': isValorInvalid }">
@@ -536,7 +538,7 @@ export default {
         data: new Date().toISOString().split('T')[0],
         categoriaId: ''
       },
-      valorExibido: '',
+      valorExibido: 'R$ 0,00',
       editMode: false,
 
       // Modal Categorias
@@ -589,16 +591,13 @@ export default {
       return this.formCompra.descricao.trim().length > 0 && this.formCompra.descricao.trim().length < 3;
     },
     isValorValid() {
-      if (!this.valorExibido) return false;
-      const valorCru = this.valorExibido.replace(',', '.');
-      const val = parseFloat(valorCru);
-      return !isNaN(val) && val > 0;
+      const val = this.formCompra.valor;
+      return typeof val === 'number' && !isNaN(val) && val > 0;
     },
     isValorInvalid() {
-      if (!this.valorExibido) return false;
-      const valorCru = this.valorExibido.replace(',', '.');
-      const val = parseFloat(valorCru);
-      return isNaN(val) || val <= 0;
+      if (this.valorExibido === 'R$ 0,00') return false;
+      const val = this.formCompra.valor;
+      return val !== null && val !== undefined && (isNaN(val) || val <= 0);
     },
     isCategoriaValid() {
       return this.formCompra.categoriaId !== '';
@@ -786,38 +785,54 @@ export default {
         maximumFractionDigits: 2
       });
     },
-    onValorFocus() {
-      if (this.valorExibido) {
-        // Clean display value to make it edit-friendly (remove R$ or thousands dots)
-        let cleaned = this.valorExibido
-          .replace(/[R$\s]/g, '') // Remove currency symbol and spaces
-          .replace(/\./g, ''); // Remove thousands separator dots
-        this.valorExibido = cleaned;
-      }
+    onValorFocus(event) {
+      this.$nextTick(() => {
+        if (event && event.target) {
+          const len = this.valorExibido.length;
+          event.target.setSelectionRange(len, len);
+        }
+      });
     },
     onValorBlur() {
-      if (this.valorExibido) {
-        // Standardise separator and format with 2 decimals
-        const rawVal = this.valorExibido.replace(',', '.');
-        const parsed = parseFloat(rawVal);
-        if (!isNaN(parsed) && parsed > 0) {
-          this.valorExibido = this.formatDecimalBrl(parsed);
+      // O valor já está sempre perfeitamente formatado
+    },
+    onValorInput(event) {
+      let val = this.valorExibido || '';
+      
+      // Extrai apenas os dígitos numéricos
+      let cleaned = val.replace(/\D/g, '');
+      
+      // Remove zeros à esquerda adicionais
+      cleaned = cleaned.replace(/^0+/, '');
+      
+      if (!cleaned) {
+        this.formCompra.valor = 0;
+        this.valorExibido = 'R$ 0,00';
+      } else {
+        const centavos = parseInt(cleaned, 10);
+        this.formCompra.valor = centavos / 100;
+        this.valorExibido = this.formatCurrency(this.formCompra.valor);
+      }
+      
+      // Força a seleção do cursor a ficar sempre no final do texto
+      this.$nextTick(() => {
+        if (event && event.target) {
+          const len = this.valorExibido.length;
+          event.target.setSelectionRange(len, len);
         }
+      });
+    },
+    onValorClick(event) {
+      if (event && event.target) {
+        const len = this.valorExibido.length;
+        event.target.setSelectionRange(len, len);
       }
     },
-    onValorInput() {
-      let val = this.valorExibido || '';
-      let cleaned = val.replace(/[^0-9.,]/g, '');
-      
-      let firstSeparatorIndex = cleaned.search(/[.,]/);
-      if (firstSeparatorIndex !== -1) {
-        let separator = cleaned[firstSeparatorIndex];
-        let before = cleaned.substring(0, firstSeparatorIndex);
-        let after = cleaned.substring(firstSeparatorIndex + 1).replace(/[.,]/g, '');
-        cleaned = before + separator + after;
+    onValorKeyup(event) {
+      if (event && event.target) {
+        const len = this.valorExibido.length;
+        event.target.setSelectionRange(len, len);
       }
-      
-      this.valorExibido = cleaned;
     },
 
     // Utility Dates Helper
@@ -929,10 +944,9 @@ export default {
     // Save Purchase (Add or Update)
     async saveCompra() {
       try {
-        const valorCru = this.valorExibido.replace(',', '.');
-        const valorParseado = parseFloat(valorCru);
+        const valorParseado = this.formCompra.valor;
         
-        if (isNaN(valorParseado) || valorParseado <= 0) {
+        if (typeof valorParseado !== 'number' || isNaN(valorParseado) || valorParseado <= 0) {
           alert('Por favor, insira um valor numérico válido maior que zero.');
           return;
         }
@@ -978,7 +992,7 @@ export default {
       this.formCompra.id = compra.id;
       this.formCompra.descricao = compra.descricao;
       this.formCompra.valor = compra.valor;
-      this.valorExibido = this.formatDecimalBrl(compra.valor);
+      this.valorExibido = this.formatCurrency(compra.valor);
       this.formCompra.data = compra.data ? compra.data.split('T')[0] : this.getTodayDateString();
       this.formCompra.categoriaId = compra.categoriaId;
 
@@ -997,7 +1011,7 @@ export default {
       this.formCompra.id = null;
       this.formCompra.descricao = '';
       this.formCompra.valor = null;
-      this.valorExibido = '';
+      this.valorExibido = 'R$ 0,00';
       this.formCompra.data = new Date().toISOString().split('T')[0];
       this.formCompra.categoriaId = '';
     },
