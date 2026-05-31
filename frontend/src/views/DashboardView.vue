@@ -8,7 +8,7 @@
       <section class="dashboard-grid animate-fade-in">
         <!-- Stats Cards -->
         <div class="stats-sidebar">
-          <div class="glass-panel stat-card">
+          <div class="glass-panel glass-panel-hover stat-card">
             <span class="stat-icon">💰</span>
             <div class="stat-info">
               <span class="stat-label">Total de Gastos</span>
@@ -17,7 +17,7 @@
             </div>
           </div>
 
-          <div class="glass-panel stat-card">
+          <div class="glass-panel glass-panel-hover stat-card">
             <span class="stat-icon">📊</span>
             <div class="stat-info">
               <span class="stat-label">Média por Compra</span>
@@ -26,7 +26,7 @@
             </div>
           </div>
 
-          <div class="glass-panel stat-card">
+          <div class="glass-panel glass-panel-hover stat-card">
             <span class="stat-icon">🏷️</span>
             <div class="stat-info">
               <span class="stat-label">Total de Lançamentos</span>
@@ -1230,8 +1230,8 @@ export default {
 
 .chart-content {
   display: grid;
-  grid-template-columns: 160px 1fr;
-  gap: 2rem;
+  grid-template-columns: 220px 1fr;
+  gap: 2.5rem;
   align-items: center;
 }
 
@@ -1301,7 +1301,7 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-  max-height: 220px;
+  max-height: 240px;
   overflow-y: auto;
   padding-right: 0.5rem;
 }
