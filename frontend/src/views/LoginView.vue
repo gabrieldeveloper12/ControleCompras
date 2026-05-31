@@ -61,6 +61,7 @@ const router = useRouter()
 async function handleLogin() {
   if (!email.value || !password.value) {
     errorMsg.value = 'Preencha todos os campos.'
+    window.showToast('Preencha todos os campos.', 'warning')
     return
   }
 
@@ -72,10 +73,12 @@ async function handleLogin() {
     authStore.setToken(response.token)
     authStore.user = response.user
     
+    window.showToast('Login realizado com sucesso! Bem-vindo.', 'success')
     // Redirect to dashboard
     router.push('/dashboard')
   } catch (err) {
     errorMsg.value = err.message || 'Credenciais inválidas. Tente novamente.'
+    window.showToast(errorMsg.value, 'error')
   } finally {
     isLoading.value = false
   }

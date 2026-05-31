@@ -44,6 +44,7 @@ const successMsg = ref('')
 async function handleReset() {
   if (!email.value) {
     errorMsg.value = 'Preencha seu e-mail.'
+    window.showToast('Preencha seu e-mail.', 'warning')
     return
   }
 
@@ -52,8 +53,10 @@ async function handleReset() {
     errorMsg.value = ''
     await AuthService.requestPasswordReset(email.value)
     successMsg.value = 'Link de recuperação enviado! Verifique seu e-mail.'
+    window.showToast('Link de recuperação enviado! Verifique seu e-mail.', 'success')
   } catch (err) {
     errorMsg.value = err.message || 'Erro ao solicitar recuperação. Tente novamente.'
+    window.showToast(errorMsg.value, 'error')
   } finally {
     isLoading.value = false
   }

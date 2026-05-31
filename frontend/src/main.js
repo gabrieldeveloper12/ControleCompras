@@ -10,6 +10,12 @@ import App from './App.vue'
 
 const app = createApp(App)
 
+window.showToast = (message, type = 'success') => {
+  window.dispatchEvent(new CustomEvent('cc-toast', {
+    detail: { message, type }
+  }));
+};
+
 app.use(createPinia())
 app.use(router)
 

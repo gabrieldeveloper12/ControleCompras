@@ -59,17 +59,29 @@
                   cy="70" 
                   r="50" 
                   class="donut-segment"
+                  :class="{ active: hoveredSlice && hoveredSlice.id === slice.id }"
                   :stroke="slice.cor"
-                  :stroke-dasharray="`${slice.size} 314.16`"
+                  :stroke-dasharray="animateChart ? `${slice.size} 314.16` : `0 314.16`"
                   :stroke-dashoffset="slice.offset"
                   stroke-width="12"
                   fill="transparent"
+                  @mouseenter="hoveredSlice = slice"
+                  @mouseleave="hoveredSlice = null"
+                  @touchstart.passive="hoveredSlice = slice"
+                  @touchend.passive="hoveredSlice = null"
                 />
                 
                 <!-- Central Text -->
-                <g class="donut-center-text">
-                  <text x="70" y="68" class="donut-center-val">{{ formatCurrency(totalGastos) }}</text>
-                  <text x="70" y="82" class="donut-center-lbl">Total Filtrado</text>
+                <g class="donut-center-text" :class="{ 'has-hover': hoveredSlice }">
+                  <text x="70" y="65" class="donut-center-val" :style="{ fill: hoveredSlice ? hoveredSlice.cor : 'var(--text-primary)' }">
+                    {{ hoveredSlice ? formatCurrency(hoveredSlice.valor) : formatCurrency(totalGastos) }}
+                  </text>
+                  <text x="70" y="79" class="donut-center-lbl">
+                    {{ hoveredSlice ? `${hoveredSlice.icone} ${hoveredSlice.nome}` : 'Total Filtrado' }}
+                  </text>
+                  <text x="70" y="89" class="donut-center-pct">
+                    {{ hoveredSlice ? `${hoveredSlice.pct}% do total` : `${compras.length} lançamentos` }}
+                  </text>
                 </g>
               </svg>
             </div>
@@ -106,9 +118,14 @@
                 type="text" 
                 v-model="formCompra.descricao" 
                 class="input-control" 
+                :class="{ 'valid': isDescricaoValid, 'invalid': isDescricaoInvalid }"
+                :disabled="isSubmitting"
                 placeholder="Ex: Supermercado do mês"
                 required
               />
+              <span class="input-hint" :class="{ 'error': isDescricaoInvalid }">
+                {{ isDescricaoInvalid ? 'Mínimo de 3 caracteres.' : 'Mínimo de 3 caracteres (Ex: Supermercado do mês).' }}
+              </span>
             </div>
 
             <div class="form-row">
@@ -120,11 +137,16 @@
                   inputmode="decimal"
                   v-model="valorExibido" 
                   class="input-control" 
+                  :class="{ 'valid': isValorValid, 'invalid': isValorInvalid }"
+                  :disabled="isSubmitting"
                   placeholder="0,00"
                   required
                   @focus="onValorFocus"
                   @blur="onValorBlur"
                 />
+                <span class="input-hint" :class="{ 'error': isValorInvalid }">
+                  {{ isValorInvalid ? 'Insira um valor numérico válido.' : 'Valor da compra (Ex: 29,90).' }}
+                </span>
               </div>
 
               <div class="form-group">
@@ -134,8 +156,11 @@
                   type="date" 
                   v-model="formCompra.data" 
                   class="input-control" 
+                  :class="{ 'valid': isDataValid }"
+                  :disabled="isSubmitting"
                   required
                 />
+                <span class="input-hint">Data da compra (Dia/Mês/Ano).</span>
               </div>
             </div>
 
@@ -145,6 +170,8 @@
                 id="categoria"
                 v-model="formCompra.categoriaId" 
                 class="input-control select-control"
+                :class="{ 'valid': isCategoriaValid }"
+                :disabled="isSubmitting"
                 required
               >
                 <option value="" disabled>Selecione uma categoria</option>
@@ -156,6 +183,7 @@
                   {{ cat.icone }} {{ cat.nome }}
                 </option>
               </select>
+              <span class="input-hint">Selecione o grupo do gasto.</span>
             </div>
 
             <div class="form-actions">
@@ -163,12 +191,18 @@
                 v-if="editMode" 
                 type="button" 
                 class="btn btn-secondary" 
+                :disabled="isSubmitting"
                 @click="cancelEdit"
               >
                 Cancelar
               </button>
-              <button type="submit" class="btn btn-primary submit-btn">
-                {{ editMode ? 'Salvar Alterações' : 'Salvar Compra' }}
+              <button 
+                type="submit" 
+                class="btn btn-primary submit-btn"
+                :disabled="isSubmitting || !isDescricaoValid || !isValorValid || !isCategoriaValid || !isDataValid"
+              >
+                <span v-if="isSubmitting" class="spinner-icon">🔄</span>
+                <span>{{ isSubmitting ? 'Salvando...' : (editMode ? 'Salvar Alterações' : 'Salvar Compra') }}</span>
               </button>
             </div>
           </form>
@@ -417,10 +451,37 @@ export default {
         icone: '📦',
         corHex: '#9E9E9E'
       },
-      editCatMode: false
+      editCatMode: false,
+      isSubmitting: false,
+      hoveredSlice: null,
+      animateChart: false
     }
   },
   computed: {
+    isDescricaoValid() {
+      return this.formCompra.descricao.trim().length >= 3;
+    },
+    isDescricaoInvalid() {
+      return this.formCompra.descricao.trim().length > 0 && this.formCompra.descricao.trim().length < 3;
+    },
+    isValorValid() {
+      if (!this.valorExibido) return false;
+      const valorCru = this.valorExibido.replace(',', '.');
+      const val = parseFloat(valorCru);
+      return !isNaN(val) && val > 0;
+    },
+    isValorInvalid() {
+      if (!this.valorExibido) return false;
+      const valorCru = this.valorExibido.replace(',', '.');
+      const val = parseFloat(valorCru);
+      return isNaN(val) || val <= 0;
+    },
+    isCategoriaValid() {
+      return this.formCompra.categoriaId !== '';
+    },
+    isDataValid() {
+      return this.formCompra.data !== '';
+    },
     filteredCompras() {
       if (!this.editMode || !this.formCompra.id) return this.compras;
       return this.compras.filter(c => c.id !== this.formCompra.id);
@@ -489,6 +550,11 @@ export default {
         const offset = -(cumulativePercentage * CIRCUMFERENCE) / 100;
         
         slices.push({
+          id: item.id,
+          nome: item.nome,
+          icone: item.icone,
+          valor: item.valor,
+          pct: item.pct,
           cor: item.cor,
           size: size,
           offset: offset
@@ -643,6 +709,8 @@ export default {
           return;
         }
 
+        this.isSubmitting = true;
+
         const url = this.editMode 
           ? `${API_BASE}/compras/${this.formCompra.id}`
           : `${API_BASE}/compras`;
@@ -661,14 +729,19 @@ export default {
         });
 
         if (res.ok) {
+          const isEdit = this.editMode;
           this.cancelEdit();
           await this.fetchCompras();
+          window.showToast(isEdit ? 'Compra atualizada com sucesso!' : 'Compra cadastrada com sucesso!', 'success');
         } else {
           const errMsg = await res.text();
-          alert(`Erro: ${errMsg}`);
+          window.showToast(errMsg || 'Erro ao salvar a compra.', 'error');
         }
       } catch (err) {
         console.error('Erro ao salvar compra:', err);
+        window.showToast('Erro ao salvar a compra.', 'error');
+      } finally {
+        this.isSubmitting = false;
       }
     },
 
@@ -711,11 +784,13 @@ export default {
 
         if (res.ok) {
           await this.fetchCompras();
+          window.showToast('Compra excluída com sucesso!', 'success');
         } else {
-          alert('Erro ao excluir a compra.');
+          window.showToast('Erro ao excluir a compra.', 'error');
         }
       } catch (err) {
         console.error('Erro ao excluir compra:', err);
+        window.showToast('Erro ao excluir a compra.', 'error');
       }
     },
 
@@ -746,15 +821,18 @@ export default {
         });
 
         if (res.ok) {
+          const isEdit = this.editCatMode;
           this.cancelCatEdit();
           await this.fetchCategorias();
           await this.fetchCompras(); // Atualiza cores/ícones na lista e dashboard
+          window.showToast(isEdit ? 'Categoria atualizada com sucesso!' : 'Categoria criada com sucesso!', 'success');
         } else {
           const errMsg = await res.text();
-          alert(`Erro: ${errMsg}`);
+          window.showToast(errMsg || 'Erro ao salvar a categoria.', 'error');
         }
       } catch (err) {
         console.error('Erro ao salvar categoria:', err);
+        window.showToast('Erro ao salvar a categoria.', 'error');
       }
     },
     startCatEdit(cat) {
@@ -781,12 +859,14 @@ export default {
 
         if (res.ok) {
           await this.fetchCategorias();
+          window.showToast('Categoria excluída com sucesso!', 'success');
         } else {
           const errMsg = await res.text();
-          alert(`Erro: ${errMsg}`);
+          window.showToast(errMsg || 'Erro ao excluir a categoria.', 'error');
         }
       } catch (err) {
         console.error('Erro ao excluir categoria:', err);
+        window.showToast('Erro ao excluir a categoria.', 'error');
       }
     }
   },
@@ -797,6 +877,11 @@ export default {
       await this.fetchCategorias();
       await this.fetchCompras();
     }
+    
+    // Ativa animação de entrada do gráfico donut
+    setTimeout(() => {
+      this.animateChart = true;
+    }, 150);
     
     // Loop de verificação de status do servidor a cada 10 segundos
     setInterval(async () => {
@@ -936,12 +1021,24 @@ export default {
 
 .donut-segment {
   stroke-linecap: round;
-  transition: stroke-dashoffset var(--transition-slow);
+  transition: stroke-dasharray var(--transition-slow), stroke-width var(--transition-fast), filter var(--transition-fast);
+  cursor: pointer;
+}
+
+.donut-segment:hover,
+.donut-segment.active {
+  stroke-width: 14;
+  filter: drop-shadow(0 0 6px rgba(255,255,255,0.15));
 }
 
 .donut-center-text {
   transform: rotate(90deg);
   transform-origin: center;
+  transition: all var(--transition-fast);
+}
+
+.donut-center-text.has-hover .donut-center-val {
+  font-size: 11px;
 }
 
 .donut-center-val {
@@ -949,6 +1046,7 @@ export default {
   font-size: 10px;
   font-weight: 700;
   text-anchor: middle;
+  transition: fill var(--transition-fast), font-size var(--transition-fast);
 }
 
 .donut-center-lbl {
@@ -956,6 +1054,15 @@ export default {
   font-size: 6px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  text-anchor: middle;
+  transition: color var(--transition-fast);
+}
+
+.donut-center-pct {
+  fill: var(--text-muted);
+  font-size: 4.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
   text-anchor: middle;
 }
 

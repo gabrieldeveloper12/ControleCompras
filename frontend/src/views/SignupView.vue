@@ -77,11 +77,13 @@ async function handleSignup() {
   
   if (!email.value || !password.value || !confirmPassword.value) {
     errorMsg.value = 'Preencha todos os campos.'
+    window.showToast('Preencha todos os campos.', 'warning')
     return
   }
 
   if (password.value !== confirmPassword.value) {
     errorMsg.value = 'As senhas não coincidem.'
+    window.showToast('As senhas não coincidem.', 'warning')
     return
   }
 
@@ -89,12 +91,14 @@ async function handleSignup() {
     isLoading.value = true
     await AuthService.register(email.value, password.value)
     successMsg.value = 'Conta criada com sucesso! Redirecionando...'
+    window.showToast('Conta criada com sucesso! Redirecionando...', 'success')
     
     setTimeout(() => {
       router.push('/login')
     }, 1500)
   } catch (err) {
     errorMsg.value = err.message || 'Erro ao criar conta. Tente novamente.'
+    window.showToast(errorMsg.value, 'error')
   } finally {
     isLoading.value = false
   }

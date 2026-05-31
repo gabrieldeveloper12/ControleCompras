@@ -206,6 +206,30 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 0 0 3px hsla(263, 80%, 62%, 0.2);
 }
 
+.input-control.valid {
+  border-color: var(--success) !important;
+  box-shadow: 0 0 0 3px hsla(142, 72%, 42%, 0.15) !important;
+}
+
+.input-control.invalid {
+  border-color: var(--danger) !important;
+  box-shadow: 0 0 0 3px hsla(352, 82%, 52%, 0.15) !important;
+}
+
+.input-hint {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  font-weight: 400;
+  transition: color var(--transition-fast);
+}
+
+.input-hint.error {
+  color: var(--danger);
+  font-weight: 500;
+}
+
 .input-control::-webkit-calendar-picker-indicator {
   filter: var(--calendar-icon-filter, invert(1) brightness(0.9) opacity(0.75));
   cursor: pointer;
@@ -318,4 +342,95 @@ button,
     margin: 0 0.1rem !important;
   }
 }
+
+/* ── Spinner Icon Animation ── */
+.spinner-icon {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+  margin-right: 0.25rem;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ── Premium Toast Notifications ── */
+.toast-container {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 999999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  pointer-events: none;
+}
+
+.toast-alert {
+  pointer-events: auto;
+  min-width: 280px;
+  max-width: 400px;
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-glass);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  padding: 0.85rem 1.25rem;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.toast-alert.success {
+  border-left: 4px solid var(--success);
+}
+.toast-alert.error {
+  border-left: 4px solid var(--danger);
+}
+.toast-alert.warning {
+  border-left: 4px solid var(--warning);
+}
+.toast-alert.info {
+  border-left: 4px solid var(--secondary);
+}
+
+.toast-icon {
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+.toast-message {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* Toast Transitions */
+.toast-enter-from {
+  opacity: 0;
+  transform: translateY(20px) scale(0.9);
+}
+.toast-leave-to {
+  opacity: 0;
+  transform: translateY(-20px) scale(0.9);
+}
+
+/* Mobile Responsiveness for Toasts */
+@media (max-width: 480px) {
+  .toast-container {
+    bottom: 1rem;
+    left: 1rem;
+    right: 1rem;
+    align-items: stretch;
+  }
+  .toast-alert {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+
 
