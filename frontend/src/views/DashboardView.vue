@@ -12,7 +12,8 @@
             <span class="stat-icon">💰</span>
             <div class="stat-info">
               <span class="stat-label">Total de Gastos</span>
-              <span class="stat-value">{{ formatCurrency(totalGastos) }}</span>
+              <span v-if="isLoading" class="skeleton-block skeleton-text-lg"></span>
+              <span v-else class="stat-value">{{ formatCurrency(totalGastos) }}</span>
             </div>
           </div>
 
@@ -20,7 +21,8 @@
             <span class="stat-icon">📊</span>
             <div class="stat-info">
               <span class="stat-label">Média por Compra</span>
-              <span class="stat-value">{{ formatCurrency(mediaPorCompra) }}</span>
+              <span v-if="isLoading" class="skeleton-block skeleton-text-lg"></span>
+              <span v-else class="stat-value">{{ formatCurrency(mediaPorCompra) }}</span>
             </div>
           </div>
 
@@ -28,7 +30,8 @@
             <span class="stat-icon">🏷️</span>
             <div class="stat-info">
               <span class="stat-label">Total de Lançamentos</span>
-              <span class="stat-value">{{ totalLancamentos }}</span>
+              <span v-if="isLoading" class="skeleton-block skeleton-text-lg"></span>
+              <span v-else class="stat-value">{{ totalLancamentos }}</span>
             </div>
           </div>
 
@@ -278,13 +281,22 @@
       <section class="glass-panel list-section animate-fade-in" style="animation-delay: 0.2s">
         <div class="list-header">
           <h3 class="card-title">Registros de Compras</h3>
+          <input 
+            type="text" 
+            v-model="searchQuery" 
+            class="input-control search-bar" 
+            placeholder="Buscar por descrição..." 
+          />
           <span class="count-badge">{{ filteredCountText }}</span>
         </div>
 
         <div class="table-container">
-          <div v-if="filteredCompras.length === 0" class="empty-table-state">
+          <div v-if="isLoading" class="skeleton-list">
+            <div class="skeleton-block skeleton-row" v-for="i in 5" :key="i"></div>
+          </div>
+          <div v-else-if="filteredCompras.length === 0" class="empty-table-state">
             <span>📝</span>
-            <p>Nenhuma compra registrada neste período.</p>
+            <p>Nenhuma compra encontrada.</p>
           </div>
           
           <template v-else>
@@ -292,10 +304,10 @@
             <table class="purchase-table">
               <thead>
                 <tr>
-                  <th>Descrição</th>
-                  <th>Categoria</th>
-                  <th>Data</th>
-                  <th class="text-right">Valor</th>
+                  <th @click="sortBy('descricao')" class="sortable">Descrição <span v-if="sortKey === 'descricao'">{{ sortAsc ? '▲' : '▼' }}</span></th>
+                  <th @click="sortBy('categoria')" class="sortable">Categoria <span v-if="sortKey === 'categoria'">{{ sortAsc ? '▲' : '▼' }}</span></th>
+                  <th @click="sortBy('data')" class="sortable">Data <span v-if="sortKey === 'data'">{{ sortAsc ? '▲' : '▼' }}</span></th>
+                  <th @click="sortBy('valor')" class="sortable text-right">Valor <span v-if="sortKey === 'valor'">{{ sortAsc ? '▲' : '▼' }}</span></th>
                   <th class="text-center">Ações</th>
                 </tr>
               </thead>
@@ -450,6 +462,24 @@
         </div>
       </div>
     </div>
+    <!-- CONFIRM MODAL -->
+    <Teleport to="body">
+      <div v-if="confirmModal.show" class="confirm-modal-overlay" @click.self="confirmModal.resolve(false); confirmModal.show = false">
+        <div class="confirm-modal-box glass-panel animate-fade-in">
+          <div class="confirm-modal-icon">⚠️</div>
+          <h3 class="confirm-modal-title">Confirmação</h3>
+          <p class="confirm-modal-message">{{ confirmModal.message }}</p>
+          <div class="confirm-modal-actions">
+            <button class="btn btn-secondary action-btn-tátil confirm-btn" @click="confirmModal.resolve(false); confirmModal.show = false">
+              Cancelar
+            </button>
+            <button class="btn btn-danger action-btn-tátil confirm-btn" @click="confirmModal.resolve(true); confirmModal.show = false">
+              Confirmar
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
 
   </div>
 </template>
@@ -500,7 +530,35 @@ export default {
       editCatMode: false,
       isSubmitting: false,
       hoveredSlice: null,
-      animateChart: false
+      animateChart: false,
+
+      // Phase 4: Busca debounced
+      searchQuery: '',
+      debouncedSearchQuery: '',
+      searchDebounceTimer: null,
+
+      // Phase 4: Ordenação
+      sortKey: 'data',
+      sortAsc: false,
+
+      // Phase 4: Modal de confirmação customizado
+      confirmModal: {
+        show: false,
+        message: '',
+        resolve: null
+      },
+
+      // Phase 4: Skeleton loader
+      isLoading: true
+    }
+  },
+  watch: {
+    // 1.2: Debounce de 300ms para searchQuery
+    searchQuery(newVal) {
+      clearTimeout(this.searchDebounceTimer);
+      this.searchDebounceTimer = setTimeout(() => {
+        this.debouncedSearchQuery = newVal;
+      }, 300);
     }
   },
   computed: {
@@ -529,8 +587,35 @@ export default {
       return this.formCompra.data !== '';
     },
     filteredCompras() {
-      if (!this.editMode || !this.formCompra.id) return this.compras;
-      return this.compras.filter(c => c.id !== this.formCompra.id);
+      // 1. Exclude the item being edited
+      let list = this.editMode && this.formCompra.id
+        ? this.compras.filter(c => c.id !== this.formCompra.id)
+        : [...this.compras];
+
+      // 1.4: Filter by debounced search query (case-insensitive on descricao)
+      const q = (this.debouncedSearchQuery || '').trim().toLowerCase();
+      if (q) {
+        list = list.filter(c => c.descricao.toLowerCase().includes(q));
+      }
+
+      // 2.3: Sort by sortKey in sortAsc direction
+      if (this.sortKey) {
+        list = list.slice().sort((a, b) => {
+          let va = a[this.sortKey];
+          let vb = b[this.sortKey];
+          if (this.sortKey === 'categoria') {
+            va = a.categoria?.nome || '';
+            vb = b.categoria?.nome || '';
+          }
+          if (typeof va === 'string') va = va.toLowerCase();
+          if (typeof vb === 'string') vb = vb.toLowerCase();
+          if (va < vb) return this.sortAsc ? -1 : 1;
+          if (va > vb) return this.sortAsc ? 1 : -1;
+          return 0;
+        });
+      }
+
+      return list;
     },
     totalGastos() {
       return this.compras.reduce((sum, c) => sum + c.valor, 0);
@@ -613,6 +698,25 @@ export default {
     }
   },
   methods: {
+    // Phase 4: Sorting
+    sortBy(key) {
+      if (this.sortKey === key) {
+        this.sortAsc = !this.sortAsc;
+      } else {
+        this.sortKey = key;
+        this.sortAsc = false; // default desc for new sort
+      }
+    },
+
+    // Phase 4: Custom Confirm Modal
+    showConfirm(message) {
+      return new Promise((resolve) => {
+        this.confirmModal.message = message;
+        this.confirmModal.resolve = resolve;
+        this.confirmModal.show = true;
+      });
+    },
+
     // Currency Input Formatter Helpers
     formatDecimalBrl(val) {
       if (val === null || val === undefined) return '';
@@ -821,7 +925,8 @@ export default {
     },
 
     async deleteCompra(id) {
-      if (!confirm('Deseja realmente excluir esta compra?')) return;
+      const confirmed = await this.showConfirm('Deseja realmente excluir esta compra?');
+      if (!confirmed) return;
       
       try {
         const res = await this.fetchWithAuth(`${API_BASE}/compras/${id}`, {
@@ -896,7 +1001,8 @@ export default {
       this.formCat.corHex = '#9E9E9E';
     },
     async deleteCategoria(id) {
-      if (!confirm('Deseja realmente excluir esta categoria?')) return;
+      const confirmed = await this.showConfirm('Deseja realmente excluir esta categoria?');
+      if (!confirmed) return;
 
       try {
         const res = await this.fetchWithAuth(`${API_BASE}/categorias/${id}`, {
@@ -923,6 +1029,7 @@ export default {
       await this.fetchCategorias();
       await this.fetchCompras();
     }
+    this.isLoading = false;
     
     // Ativa animação de entrada do gráfico donut
     setTimeout(() => {
