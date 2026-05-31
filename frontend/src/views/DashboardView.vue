@@ -1815,6 +1815,10 @@ export default {
 
 /* RESPONSIVE DESIGN */
 @media (max-width: 900px) {
+  .app-container {
+    padding: 1.25rem 0.75rem;
+  }
+
   .dashboard-grid, .interaction-grid {
     grid-template-columns: 1fr;
     gap: 1.5rem;
