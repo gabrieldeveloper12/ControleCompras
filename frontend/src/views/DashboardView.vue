@@ -254,6 +254,7 @@
                   type="date" 
                   v-model="filtroDataInicio" 
                   class="input-control"
+                  :class="{ 'invalid': isPeriodoInvalido }"
                 />
               </div>
 
@@ -263,12 +264,23 @@
                   type="date" 
                   v-model="filtroDataFim" 
                   class="input-control"
+                  :class="{ 'invalid': isPeriodoInvalido }"
                 />
               </div>
             </div>
 
+            <!-- Error message for invalid period -->
+            <div v-if="filtroTipo === 'periodo' && isPeriodoInvalido" class="periodo-error-message animate-fade-in">
+              ⚠️ A data final não pode ser menor que a data inicial.
+            </div>
+
             <div class="filter-actions-row">
-              <button type="button" class="btn btn-primary filter-submit-btn" @click="fetchCompras">
+              <button 
+                type="button" 
+                class="btn btn-primary filter-submit-btn" 
+                :disabled="isPeriodoInvalido"
+                @click="fetchCompras"
+              >
                 🔍 Consultar
               </button>
               <button type="button" class="btn btn-secondary clear-filters-btn" @click="resetFilters">
@@ -593,6 +605,11 @@ export default {
     },
     isDataValid() {
       return this.formCompra.data !== '';
+    },
+    isPeriodoInvalido() {
+      if (this.filtroTipo !== 'periodo') return false;
+      if (!this.filtroDataInicio || !this.filtroDataFim) return false;
+      return this.filtroDataFim < this.filtroDataInicio;
     },
     filteredCompras() {
       // 1. Exclude the item being edited
@@ -1446,6 +1463,25 @@ export default {
 .clear-filters-btn {
   width: 100%;
   padding: 0.75rem;
+}
+
+.periodo-error-message {
+  color: var(--danger, #ef4444);
+  font-size: 0.8rem;
+  margin-top: -0.5rem;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+  filter: none !important;
 }
 
 /* SECTION 3: LIST SECTION */
