@@ -245,13 +245,13 @@ app.MapGet("/api/compras", async (
 
     if (inicio.HasValue)
     {
-        var dataInicio = inicio.Value.Date;
+        var dataInicio = DateTime.SpecifyKind(inicio.Value.Date, DateTimeKind.Utc);
         query = query.Where(c => c.Data >= dataInicio);
     }
 
     if (fim.HasValue)
     {
-        var dataFim = fim.Value.Date.AddDays(1);
+        var dataFim = DateTime.SpecifyKind(fim.Value.Date.AddDays(1), DateTimeKind.Utc);
         query = query.Where(c => c.Data < dataFim);
     }
 
@@ -279,6 +279,7 @@ app.MapPost("/api/compras", async (ClaimsPrincipal user, Compra compra, ComprasD
     if (!categoriaExiste)
         return Results.BadRequest("A categoria informada não existe ou não pertence a você.");
 
+    compra.Data = DateTime.SpecifyKind(compra.Data, DateTimeKind.Utc);
     compra.Categoria = null; // Evita reinserção da categoria pelo EF
     compra.UsuarioId = userId;
     db.Compras.Add(compra);
@@ -309,7 +310,7 @@ app.MapPut("/api/compras/{id:int}", async (ClaimsPrincipal user, int id, Compra 
 
     compra.Descricao = inputCompra.Descricao;
     compra.Valor = inputCompra.Valor;
-    compra.Data = inputCompra.Data;
+    compra.Data = DateTime.SpecifyKind(inputCompra.Data, DateTimeKind.Utc);
     compra.CategoriaId = inputCompra.CategoriaId;
 
     await db.SaveChangesAsync();

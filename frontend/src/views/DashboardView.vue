@@ -796,9 +796,9 @@ export default {
     },
     formatDate(dateStr) {
       if (!dateStr) return '';
-      const date = new Date(dateStr);
-      // Ajuste de Timezone local
-      return date.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+      const datePart = dateStr.split('T')[0];
+      const [year, month, day] = datePart.split('-');
+      return `${day}/${month}/${year}`;
     },
     formatCurrency(val) {
       return new Intl.NumberFormat('pt-BR', {
