@@ -511,15 +511,15 @@ export default {
       // Filtros
       filtroTipo: 'mes',
       filtroMesAno: new Date().toISOString().substring(0, 7),
-      filtroDataInicio: this.getTodayDateString(),
-      filtroDataFim: this.getTodayDateString(),
+      filtroDataInicio: new Date().toISOString().split('T')[0],
+      filtroDataFim: new Date().toISOString().split('T')[0],
       
       // Form Compra
       formCompra: {
         id: null,
         descricao: '',
         valor: null,
-        data: this.getTodayDateString(),
+        data: new Date().toISOString().split('T')[0],
         categoriaId: ''
       },
       valorExibido: '',
@@ -889,8 +889,8 @@ export default {
     resetFilters() {
       this.filtroTipo = 'mes';
       this.filtroMesAno = new Date().toISOString().substring(0, 7);
-      this.filtroDataInicio = this.getTodayDateString();
-      this.filtroDataFim = this.getTodayDateString();
+      this.filtroDataInicio = new Date().toISOString().split('T')[0];
+      this.filtroDataFim = new Date().toISOString().split('T')[0];
       this.fetchCompras();
     },
 
@@ -919,7 +919,7 @@ export default {
           body: JSON.stringify({
             descricao: this.formCompra.descricao,
             valor: valorParseado,
-            data: new Date(this.formCompra.data).toISOString(),
+            data: this.formCompra.data + "T12:00:00",
             categoriaId: this.formCompra.categoriaId
           })
         });
@@ -966,7 +966,7 @@ export default {
       this.formCompra.descricao = '';
       this.formCompra.valor = null;
       this.valorExibido = '';
-      this.formCompra.data = this.getTodayDateString();
+      this.formCompra.data = new Date().toISOString().split('T')[0];
       this.formCompra.categoriaId = '';
     },
 
