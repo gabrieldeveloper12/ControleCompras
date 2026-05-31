@@ -243,7 +243,6 @@
                 type="month" 
                 v-model="filtroMesAno" 
                 class="input-control"
-                @change="onFiltroMesAnoChange"
               />
             </div>
 
@@ -255,7 +254,6 @@
                   type="date" 
                   v-model="filtroDataInicio" 
                   class="input-control"
-                  @change="onFiltroDataChange"
                 />
               </div>
 
@@ -265,14 +263,18 @@
                   type="date" 
                   v-model="filtroDataFim" 
                   class="input-control"
-                  @change="onFiltroDataChange"
                 />
               </div>
             </div>
 
-            <button class="btn btn-secondary clear-filters-btn" @click="resetFilters">
-              🧹 Limpar Filtros
-            </button>
+            <div class="filter-actions-row">
+              <button type="button" class="btn btn-primary filter-submit-btn" @click="fetchCompras">
+                🔍 Consultar
+              </button>
+              <button type="button" class="btn btn-secondary clear-filters-btn" @click="resetFilters">
+                🧹 Limpar Filtros
+              </button>
+            </div>
 
             <!-- Filter Status Active Card -->
             <div class="filter-status-card">
@@ -884,7 +886,6 @@ export default {
     },
     setFiltroTipo(tipo) {
       this.filtroTipo = tipo;
-      this.fetchCompras();
     },
     resetFilters() {
       this.filtroTipo = 'mes';
@@ -1435,6 +1436,13 @@ export default {
 }
 
 
+.filter-actions-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.filter-submit-btn,
 .clear-filters-btn {
   width: 100%;
   padding: 0.75rem;
