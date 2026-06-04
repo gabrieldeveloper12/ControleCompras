@@ -411,7 +411,7 @@
                 </tr>
               </thead>
               <tbody>
-                <template v-for="grupo in comprasAgrupadas" :key="grupo.id || grupo.grupoParcelaId">
+                <template v-for="grupo in paginatedComprasAgrupadas" :key="grupo.id || grupo.grupoParcelaId">
                   <!-- Row: Normal purchase (not a group) -->
                   <tr v-if="!grupo.isGroup" class="table-row">
                     <td class="col-desc">
@@ -512,7 +512,7 @@
 
             <!-- Mobile Cards View -->
             <div class="purchase-cards-mobile">
-              <template v-for="grupo in comprasAgrupadas" :key="grupo.id || grupo.grupoParcelaId">
+              <template v-for="grupo in paginatedComprasAgrupadas" :key="grupo.id || grupo.grupoParcelaId">
                 <!-- Card: Normal purchase -->
                 <div v-if="!grupo.isGroup" class="purchase-card glass-panel">
                   <div class="card-header-row">
@@ -623,6 +623,48 @@
               </template>
             </div>
           </template>
+
+          <!-- Paginação -->
+          <div v-if="totalPaginas > 1" class="pagination-container">
+            <button
+              class="pagination-btn"
+              :disabled="currentPage === 1"
+              @click="currentPage = 1"
+              title="Primeira página"
+            >«</button>
+            <button
+              class="pagination-btn"
+              :disabled="currentPage === 1"
+              @click="currentPage--"
+              title="Página anterior"
+            >‹</button>
+
+            <template v-for="pg in totalPaginas" :key="pg">
+              <button
+                v-if="pg === 1 || pg === totalPaginas || (pg >= currentPage - 1 && pg <= currentPage + 1)"
+                class="pagination-btn"
+                :class="{ active: pg === currentPage }"
+                @click="currentPage = pg"
+              >{{ pg }}</button>
+              <span
+                v-else-if="pg === currentPage - 2 || pg === currentPage + 2"
+                class="pagination-ellipsis"
+              >…</span>
+            </template>
+
+            <button
+              class="pagination-btn"
+              :disabled="currentPage === totalPaginas"
+              @click="currentPage++"
+              title="Próxima página"
+            >›</button>
+            <button
+              class="pagination-btn"
+              :disabled="currentPage === totalPaginas"
+              @click="currentPage = totalPaginas"
+              title="Última página"
+            >»</button>
+          </div>
         </div>
       </section>
     </main>
@@ -794,7 +836,11 @@ export default {
       },
 
       // Phase 4: Skeleton loader
-      isLoading: true
+      isLoading: true,
+
+      // Paginação
+      currentPage: 1,
+      pageSize: 10
     }
   },
   watch: {
@@ -803,7 +849,12 @@ export default {
       clearTimeout(this.searchDebounceTimer);
       this.searchDebounceTimer = setTimeout(() => {
         this.debouncedSearchQuery = newVal;
+        this.currentPage = 1;
       }, 300);
+    },
+    // Resetar página ao mudar dados
+    compras() {
+      this.currentPage = 1;
     }
   },
   computed: {
@@ -911,10 +962,19 @@ export default {
       return this.totalGastos / this.compras.length;
     },
     filteredCountText() {
-      const cnt = this.filteredCompras.length;
-      if (cnt === 0) return 'Nenhum lançamento';
-      if (cnt === 1) return '1 lançamento';
-      return `${cnt} lançamentos`;
+      const total = this.comprasAgrupadas.length;
+      if (total === 0) return 'Nenhum lançamento';
+      const inicio = (this.currentPage - 1) * this.pageSize + 1;
+      const fim = Math.min(this.currentPage * this.pageSize, total);
+      if (total === 1) return '1 lançamento';
+      return `${inicio}–${fim} de ${total} lançamentos`;
+    },
+    totalPaginas() {
+      return Math.ceil(this.comprasAgrupadas.length / this.pageSize);
+    },
+    paginatedComprasAgrupadas() {
+      const start = (this.currentPage - 1) * this.pageSize;
+      return this.comprasAgrupadas.slice(start, start + this.pageSize);
     },
     
     // SVG Donut Slices Calculations
@@ -2337,5 +2397,60 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+}
+
+/* ===== PAGINAÇÃO ===== */
+.pagination-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 1.25rem 1rem 0.5rem;
+  flex-wrap: wrap;
+}
+
+.pagination-btn {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-glass);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: var(--surface-2);
+  border-color: var(--border-glass-focus);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+.pagination-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 0 12px var(--primary-glow);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.pagination-ellipsis {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  padding: 0 0.25rem;
+  user-select: none;
 }
 </style>

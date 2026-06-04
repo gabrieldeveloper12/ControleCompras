@@ -3,7 +3,7 @@
     <div class="logo">
       <span class="logo-emoji">💸</span>
       <div class="logo-text">
-        <h1>ControleCompras</h1>
+        <h1>Controle de Compras</h1>
         <p>Gestão Pessoal de Gastos</p>
       </div>
     </div>
