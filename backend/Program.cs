@@ -80,6 +80,40 @@ using (var scope = app.Services.CreateScope())
             // Se as tabelas já existirem, ignoramos o erro e prosseguimos
         }
 
+        // Garante que a tabela de histórico de migrações existe e está populada com as migrações anteriores
+        // para evitar que o EF Core tente recriar tabelas que já existem em produção (Postgres)
+        try
+        {
+            using (var command = context.Database.GetDbConnection().CreateCommand())
+            {
+                context.Database.OpenConnection();
+                
+                command.CommandText = @"
+                    CREATE TABLE IF NOT EXISTS ""__EFMigrationsHistory"" (
+                        ""MigrationId"" varchar(150) NOT NULL,
+                        ""ProductVersion"" varchar(32) NOT NULL,
+                        CONSTRAINT ""PK___EFMigrationsHistory"" PRIMARY KEY (""MigrationId"")
+                    );";
+                command.ExecuteNonQuery();
+
+                command.CommandText = @"
+                    INSERT INTO ""__EFMigrationsHistory"" (""MigrationId"", ""ProductVersion"")
+                    VALUES ('20260527173704_InitialCreate', '10.0.8')
+                    ON CONFLICT DO NOTHING;";
+                command.ExecuteNonQuery();
+
+                command.CommandText = @"
+                    INSERT INTO ""__EFMigrationsHistory"" (""MigrationId"", ""ProductVersion"")
+                    VALUES ('20260529195900_AddUsuarioEntity', '10.0.8')
+                    ON CONFLICT DO NOTHING;";
+                command.ExecuteNonQuery();
+            }
+        }
+        catch
+        {
+            // Silencia erro para fallback seguro no Migrate()
+        }
+
         // Aplica todas as migrações pendentes no banco de dados (SQLite local ou Postgres no Render)
         context.Database.Migrate();
     }
