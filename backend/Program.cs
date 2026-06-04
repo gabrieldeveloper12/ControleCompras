@@ -21,6 +21,7 @@ builder.Services.AddDbContext<ComprasDbContext>(options =>
     {
         options.UseSqlite(connectionString);
     }
+    options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
 });
 
 // Configuração de CORS para permitir chamadas do front-end Vue 3
