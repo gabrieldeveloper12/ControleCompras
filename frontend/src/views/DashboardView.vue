@@ -682,83 +682,103 @@
           <div class="modal-form-box">
             <h4>{{ editCatMode ? 'Editar Categoria' : 'Nova Categoria' }}</h4>
             <form @submit.prevent="saveCategoria" class="cat-form">
-              <div class="form-group" style="margin-bottom: 1.25rem;">
-                <label class="input-label">Nome da Categoria</label>
-                <input 
-                  type="text" 
-                  v-model="formCat.nome" 
-                  class="input-control" 
-                  placeholder="Nome (ex: Lazer)"
-                  required
-                />
-              </div>
-              
-              <!-- Seletor de Cores Curado -->
-              <div class="color-selector-group" style="margin-bottom: 1.25rem;">
-                <label class="input-label">Cor da Categoria</label>
-                <div class="color-grid">
-                  <button
-                    v-for="color in colorOptions"
-                    :key="color"
-                    type="button"
-                    class="color-btn"
-                    :style="{ backgroundColor: color }"
-                    :class="{ active: formCat.corHex === color }"
-                    @click="formCat.corHex = color"
-                    title="Selecionar cor"
-                  ></button>
-                  
-                  <div class="custom-color-picker-wrapper">
-                    <button 
-                      type="button" 
-                      class="color-btn custom-color-trigger" 
-                      :style="{ background: !colorOptions.includes(formCat.corHex) ? formCat.corHex : 'conic-gradient(red, yellow, green, cyan, blue, magenta, red)' }"
-                      :class="{ active: !colorOptions.includes(formCat.corHex) }"
-                      title="Outra cor..."
-                    >
-                      🎨
-                    </button>
-                    <input 
-                      type="color" 
-                      v-model="formCat.corHex" 
-                      class="custom-color-input"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <!-- Seletor de Emojis -->
-              <div class="emoji-selector-group" style="margin-bottom: 1.25rem;">
-                <label class="input-label">Ícone da Categoria</label>
-                <div class="emoji-container">
-                  <div class="emoji-grid">
-                    <button
-                      v-for="emoji in emojiOptions"
-                      :key="emoji"
-                      type="button"
-                      class="emoji-btn"
-                      :class="{ active: formCat.icone === emoji }"
-                      :style="formCat.icone === emoji ? { borderColor: formCat.corHex, boxShadow: `0 0 10px ${formCat.corHex}` } : {}"
-                      @click="formCat.icone = emoji"
-                    >
-                      {{ emoji }}
-                    </button>
-                  </div>
-                  <div class="emoji-fallback-box">
-                    <span class="emoji-fallback-icon">✏️</span>
+              <div class="cat-form-grid">
+                <!-- Coluna Esquerda: Nome, Cor e Preview -->
+                <div class="cat-form-left">
+                  <div class="form-group">
+                    <label class="input-label">Nome da Categoria</label>
                     <input 
                       type="text" 
-                      v-model="formCat.icone" 
-                      class="input-control emoji-fallback-input" 
-                      placeholder="Emoji personalizado..."
-                      maxlength="2"
+                      v-model="formCat.nome" 
+                      class="input-control" 
+                      placeholder="Nome (ex: Lazer)"
                       required
                     />
                   </div>
+                  
+                  <!-- Seletor de Cores -->
+                  <div class="color-selector-group">
+                    <label class="input-label">Cor da Categoria</label>
+                    <div class="color-grid">
+                      <button
+                        v-for="color in colorOptions"
+                        :key="color"
+                        type="button"
+                        class="color-btn"
+                        :style="{ backgroundColor: color }"
+                        :class="{ active: formCat.corHex === color }"
+                        @click="formCat.corHex = color"
+                        title="Selecionar cor"
+                      ></button>
+                      
+                      <div class="custom-color-picker-wrapper">
+                        <button 
+                          type="button" 
+                          class="color-btn custom-color-trigger" 
+                          :style="{ background: !colorOptions.includes(formCat.corHex) ? formCat.corHex : 'conic-gradient(red, yellow, green, cyan, blue, magenta, red)' }"
+                          :class="{ active: !colorOptions.includes(formCat.corHex) }"
+                          title="Outra cor..."
+                        >
+                          🎨
+                        </button>
+                        <input 
+                          type="color" 
+                          v-model="formCat.corHex" 
+                          class="custom-color-input"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Preview da Categoria -->
+                  <div class="cat-preview">
+                    <span class="cat-preview-label">Preview:</span>
+                    <span 
+                      class="category-tag cat-preview-badge" 
+                      :style="{ 
+                        borderLeft: `4px solid ${previewCategoria.corHex}`,
+                        backgroundColor: `${previewCategoria.corHex}15`
+                      }"
+                    >
+                      <span class="tag-icon">{{ previewCategoria.icone }}</span>
+                      <span class="tag-name">{{ previewCategoria.nome }}</span>
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Coluna Direita: Seletor de Emoji -->
+                <div class="cat-form-right">
+                  <label class="input-label">Ícone da Categoria</label>
+                  <div class="emoji-container">
+                    <div class="emoji-grid">
+                      <button
+                        v-for="emoji in emojiOptions"
+                        :key="emoji"
+                        type="button"
+                        class="emoji-btn"
+                        :class="{ active: formCat.icone === emoji }"
+                        :style="formCat.icone === emoji ? { borderColor: formCat.corHex, boxShadow: `0 0 8px ${formCat.corHex}` } : {}"
+                        @click="formCat.icone = emoji"
+                      >
+                        {{ emoji }}
+                      </button>
+                    </div>
+                    <div class="emoji-fallback-box">
+                      <span class="emoji-fallback-icon">✏️</span>
+                      <input 
+                        type="text" 
+                        v-model="formCat.icone" 
+                        class="input-control emoji-fallback-input" 
+                        placeholder="Outro emoji..."
+                        maxlength="2"
+                        required
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div class="cat-form-actions" style="margin-top: 1.5rem; justify-content: flex-end;">
+              <div class="cat-form-actions" style="margin-top: 1.25rem; justify-content: flex-end;">
                 <button v-if="editCatMode" type="button" class="btn btn-secondary btn-sm" :disabled="isSubmittingCat" @click="cancelCatEdit">
                   Cancelar
                 </button>
@@ -767,21 +787,6 @@
                 </button>
               </div>
             </form>
-
-            <!-- Preview da Categoria -->
-            <div class="cat-preview" style="margin-top: 1.5rem;">
-              <span class="cat-preview-label">Preview:</span>
-              <span 
-                class="category-tag cat-preview-badge" 
-                :style="{ 
-                  borderLeft: `4px solid ${previewCategoria.corHex}`,
-                  backgroundColor: `${previewCategoria.corHex}15`
-                }"
-              >
-                <span class="tag-icon">{{ previewCategoria.icone }}</span>
-                <span class="tag-name">{{ previewCategoria.nome }}</span>
-              </span>
-            </div>
           </div>
 
           <!-- List of Existing Categories -->
@@ -2262,19 +2267,44 @@ export default {
 }
 
 /* Category Modal UX Enhancements */
+.cat-form-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 600px) {
+  .cat-form-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+}
+
+.cat-form-left {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cat-form-right {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .cat-preview {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-top: 1.25rem;
-  padding: 0.75rem 1rem;
+  margin-top: auto;
+  padding: 0.5rem 0.75rem;
   background: var(--surface-1);
   border: 1px dashed var(--border-glass);
   border-radius: var(--radius-sm);
 }
 
 .cat-preview-label {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
   font-weight: 500;
   text-transform: uppercase;
@@ -2284,24 +2314,24 @@ export default {
 .color-selector-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .color-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.4rem;
   margin-top: 0.25rem;
 }
 
 .color-btn {
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   border: 2px solid transparent;
   cursor: pointer;
   transition: all var(--transition-fast);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 1.5px 3px rgba(0, 0, 0, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2309,7 +2339,7 @@ export default {
 
 .color-btn:hover {
   transform: scale(1.15);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
 }
 
 .color-btn.active {
@@ -2320,8 +2350,8 @@ export default {
 
 .custom-color-picker-wrapper {
   position: relative;
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
 }
 
@@ -2338,13 +2368,12 @@ export default {
 }
 
 .custom-color-trigger {
-  font-size: 1.1rem;
+  font-size: 0.9rem;
   color: #fff;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .emoji-selector-group {
-  margin-top: 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -2353,26 +2382,27 @@ export default {
 .emoji-container {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
   background: hsla(var(--hue-base) 10% 20% / 0.15);
   border: 1px solid var(--border-glass);
-  padding: 0.75rem;
+  padding: 0.5rem;
   border-radius: var(--radius-sm);
+  max-width: 280px;
 }
 
 .emoji-grid {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  gap: 0.5rem;
+  gap: 0.4rem;
   justify-items: center;
 }
 
 .emoji-btn {
-  width: 36px;
-  height: 36px;
-  font-size: 1.3rem;
+  width: 28px;
+  height: 28px;
+  font-size: 1.05rem;
   background: var(--surface-1);
-  border: 1.5px solid var(--border-glass);
+  border: 1px solid var(--border-glass);
   border-radius: var(--radius-sm);
   cursor: pointer;
   display: flex;
@@ -2383,13 +2413,13 @@ export default {
 
 .emoji-btn:hover {
   background: var(--surface-3);
-  transform: scale(1.15) translateY(-2px);
+  transform: scale(1.15) translateY(-1px);
 }
 
 .emoji-btn.active {
   background: var(--surface-4) !important;
   border-color: var(--primary) !important;
-  transform: scale(1.15) translateY(-2px);
+  transform: scale(1.15) translateY(-1px);
 }
 
 .emoji-fallback-box {
@@ -2398,21 +2428,22 @@ export default {
   background: var(--surface-1);
   border: 1px solid var(--border-glass);
   border-radius: var(--radius-sm);
-  padding: 0 0.75rem;
-  gap: 0.5rem;
-  max-width: 200px;
+  padding: 0 0.5rem;
+  gap: 0.35rem;
+  max-width: 150px;
+  align-self: center;
 }
 
 .emoji-fallback-icon {
-  font-size: 0.95rem;
+  font-size: 0.8rem;
   opacity: 0.7;
 }
 
 .emoji-fallback-input {
   border: none !important;
   background: transparent !important;
-  padding: 0.5rem 0 !important;
-  font-size: 0.9rem;
+  padding: 0.35rem 0 !important;
+  font-size: 0.8rem;
   width: 100%;
   color: var(--text-primary);
   outline: none;
