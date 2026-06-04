@@ -858,16 +858,16 @@ export default {
       
       // Filtros
       filtroTipo: 'mes',
-      filtroMesAno: new Date().toISOString().substring(0, 7),
-      filtroDataInicio: new Date().toISOString().split('T')[0],
-      filtroDataFim: new Date().toISOString().split('T')[0],
+      filtroMesAno: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().substring(0, 7),
+      filtroDataInicio: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0],
+      filtroDataFim: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0],
       
       // Form Compra
       formCompra: {
         id: null,
         descricao: '',
         valor: null,
-        data: new Date().toISOString().split('T')[0],
+        data: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0],
         categoriaId: '',
         formaPagamento: 'dinheiro',
         totalParcelas: null,
@@ -1270,8 +1270,7 @@ export default {
 
     // Utility Dates Helper
     getTodayDateString() {
-      const today = new Date();
-      return today.toISOString().split('T')[0];
+      return new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
     },
     formatDate(dateStr) {
       if (!dateStr) return '';
@@ -1464,7 +1463,7 @@ export default {
       this.formCompra.descricao = '';
       this.formCompra.valor = null;
       this.valorExibido = 'R$ 0,00';
-      this.formCompra.data = new Date().toISOString().split('T')[0];
+      this.formCompra.data = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
       this.formCompra.categoriaId = '';
       this.formCompra.formaPagamento = 'dinheiro';
       this.formCompra.totalParcelas = null;
