@@ -12,4 +12,9 @@ public class Compra
 
     public int UsuarioId { get; set; }
     public Usuario? Usuario { get; set; }
+
+    public string? FormaPagamento { get; set; }
+    public int? TotalParcelas { get; set; }
+    public int? NumeroParcela { get; set; }
+    public Guid? GrupoParcelaId { get; set; }
 }

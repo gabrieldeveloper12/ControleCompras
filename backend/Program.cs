@@ -266,29 +266,85 @@ app.MapGet("/api/compras", async (
 }).RequireAuthorization();
 
 // Cadastrar nova compra
-app.MapPost("/api/compras", async (ClaimsPrincipal user, Compra compra, ComprasDbContext db) =>
+app.MapPost("/api/compras", async (ClaimsPrincipal user, CriarCompraRequest req, ComprasDbContext db) =>
 {
     var userId = int.Parse(user.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-    if (string.IsNullOrWhiteSpace(compra.Descricao))
+    if (string.IsNullOrWhiteSpace(req.Descricao))
         return Results.BadRequest("A descrição da compra é obrigatória.");
 
-    if (compra.Valor <= 0)
+    if (req.ValorTotal <= 0)
         return Results.BadRequest("O valor da compra deve ser maior que zero.");
 
-    var categoriaExiste = await db.Categorias.AnyAsync(c => c.Id == compra.CategoriaId && c.UsuarioId == userId);
+    var categoriaExiste = await db.Categorias.AnyAsync(c => c.Id == req.CategoriaId && c.UsuarioId == userId);
     if (!categoriaExiste)
         return Results.BadRequest("A categoria informada não existe ou não pertence a você.");
 
-    compra.Data = DateTime.SpecifyKind(compra.Data, DateTimeKind.Utc);
-    compra.Categoria = null; // Evita reinserção da categoria pelo EF
-    compra.UsuarioId = userId;
-    db.Compras.Add(compra);
-    await db.SaveChangesAsync();
+    var dataBase = DateTime.SpecifyKind(req.Data, DateTimeKind.Utc);
 
-    // Carrega a referência da categoria para o retorno completo do JSON
-    await db.Entry(compra).Reference(c => c.Categoria).LoadAsync();
+    if (req.FormaPagamento == "cartao_parcelado" && req.TotalParcelas.HasValue && req.TotalParcelas.Value >= 2)
+    {
+        int totalParcelas = req.TotalParcelas.Value;
+        if (totalParcelas > 12)
+            return Results.BadRequest("O número máximo de parcelas é 12.");
 
-    return Results.Created($"/api/compras/{compra.Id}", compra);
+        decimal valorBase = Math.Floor((req.ValorTotal / totalParcelas) * 100) / 100;
+        decimal valorExtra = req.ValorTotal - (valorBase * totalParcelas);
+        Guid grupoId = Guid.NewGuid();
+        var comprasCriadas = new List<Compra>();
+
+        for (int i = 1; i <= totalParcelas; i++)
+        {
+            decimal valorParcela = (i == 1) ? valorBase + valorExtra : valorBase;
+            DateTime dataParcela = dataBase.AddMonths(i - 1);
+
+            var compra = new Compra
+            {
+                Descricao = req.Descricao,
+                Valor = valorParcela,
+                Data = DateTime.SpecifyKind(dataParcela, DateTimeKind.Utc),
+                CategoriaId = req.CategoriaId,
+                UsuarioId = userId,
+                FormaPagamento = req.FormaPagamento,
+                TotalParcelas = totalParcelas,
+                NumeroParcela = i,
+                GrupoParcelaId = grupoId
+            };
+
+            db.Compras.Add(compra);
+            comprasCriadas.Add(compra);
+        }
+
+        await db.SaveChangesAsync();
+
+        foreach (var c in comprasCriadas)
+        {
+            await db.Entry(c).Reference(compra => compra.Categoria).LoadAsync();
+        }
+
+        return Results.Created("/api/compras", comprasCriadas);
+    }
+    else
+    {
+        var compra = new Compra
+        {
+            Descricao = req.Descricao,
+            Valor = req.ValorTotal,
+            Data = dataBase,
+            CategoriaId = req.CategoriaId,
+            UsuarioId = userId,
+            FormaPagamento = req.FormaPagamento,
+            TotalParcelas = null,
+            NumeroParcela = null,
+            GrupoParcelaId = null
+        };
+
+        db.Compras.Add(compra);
+        await db.SaveChangesAsync();
+
+        await db.Entry(compra).Reference(c => c.Categoria).LoadAsync();
+
+        return Results.Created($"/api/compras/{compra.Id}", compra);
+    }
 }).RequireAuthorization();
 
 // Atualizar compra existente
@@ -324,7 +380,19 @@ app.MapDelete("/api/compras/{id:int}", async (ClaimsPrincipal user, int id, Comp
     var compra = await db.Compras.FirstOrDefaultAsync(c => c.Id == id && c.UsuarioId == userId);
     if (compra is null) return Results.NotFound();
 
-    db.Compras.Remove(compra);
+    if (compra.GrupoParcelaId.HasValue)
+    {
+        var comprasDoGrupo = await db.Compras
+            .Where(c => c.GrupoParcelaId == compra.GrupoParcelaId && c.UsuarioId == userId)
+            .ToListAsync();
+        
+        db.Compras.RemoveRange(comprasDoGrupo);
+    }
+    else
+    {
+        db.Compras.Remove(compra);
+    }
+
     await db.SaveChangesAsync();
     return Results.NoContent();
 }).RequireAuthorization();
@@ -333,3 +401,4 @@ app.Run();
 
 public record LoginRequest(string Email, string Password);
 public record RegisterRequest(string Email, string Password, string Nome);
+public record CriarCompraRequest(string Descricao, decimal ValorTotal, DateTime Data, int CategoriaId, string? FormaPagamento, int? TotalParcelas);

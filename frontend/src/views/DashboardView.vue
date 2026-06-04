@@ -192,6 +192,83 @@
               <span class="input-hint">Selecione o grupo do gasto.</span>
             </div>
 
+            <div class="form-group">
+              <label class="input-label">Forma de Pagamento</label>
+              <div v-if="!editMode" class="payment-methods-grid">
+                <button 
+                  type="button" 
+                  class="payment-method-btn" 
+                  :class="{ active: formCompra.formaPagamento === 'dinheiro' }"
+                  @click="formCompra.formaPagamento = 'dinheiro'; formCompra.totalParcelas = null"
+                  :disabled="isSubmitting"
+                >
+                  💵 Dinheiro
+                </button>
+                <button 
+                  type="button" 
+                  class="payment-method-btn" 
+                  :class="{ active: formCompra.formaPagamento === 'debito' }"
+                  @click="formCompra.formaPagamento = 'debito'; formCompra.totalParcelas = null"
+                  :disabled="isSubmitting"
+                >
+                  💳 Débito
+                </button>
+                <button 
+                  type="button" 
+                  class="payment-method-btn" 
+                  :class="{ active: formCompra.formaPagamento === 'pix' }"
+                  @click="formCompra.formaPagamento = 'pix'; formCompra.totalParcelas = null"
+                  :disabled="isSubmitting"
+                >
+                  📱 Pix
+                </button>
+                <button 
+                  type="button" 
+                  class="payment-method-btn" 
+                  :class="{ active: formCompra.formaPagamento === 'cartao_avista' }"
+                  @click="formCompra.formaPagamento = 'cartao_avista'; formCompra.totalParcelas = null"
+                  :disabled="isSubmitting"
+                >
+                  💳 Cartão à Vista
+                </button>
+                <button 
+                  type="button" 
+                  class="payment-method-btn" 
+                  :class="{ active: formCompra.formaPagamento === 'cartao_parcelado' }"
+                  @click="formCompra.formaPagamento = 'cartao_parcelado'; formCompra.totalParcelas = ''"
+                  :disabled="isSubmitting"
+                >
+                  💳 Parcelado
+                </button>
+              </div>
+              <div v-else-if="formCompra.formaPagamento" class="payment-method-readonly">
+                {{ getFormaPagamentoIcon(formCompra.formaPagamento) }} {{ getFormaPagamentoLabel(formCompra.formaPagamento) }}
+                <span v-if="formCompra.formaPagamento === 'cartao_parcelado'">
+                  — Parcela {{ formCompra.numeroParcela }} de {{ formCompra.totalParcelas }}
+                </span>
+              </div>
+              <div v-else class="payment-method-readonly">
+                Nenhuma forma de pagamento registrada
+              </div>
+            </div>
+
+            <div v-if="formCompra.formaPagamento === 'cartao_parcelado' && !editMode" class="form-group animate-fade-in">
+              <label class="input-label" for="totalParcelas">Quantidade de Parcelas</label>
+              <select 
+                id="totalParcelas" 
+                v-model="formCompra.totalParcelas" 
+                class="input-control select-control"
+                :disabled="isSubmitting"
+                required
+              >
+                <option value="" disabled>Selecione o número de parcelas</option>
+                <option v-for="n in 11" :key="n + 1" :value="n + 1">{{ n + 1 }}x</option>
+              </select>
+              <span v-if="formCompra.valor && formCompra.totalParcelas" class="input-hint" style="color: var(--success); font-weight: 500;">
+                Preview: {{ formCompra.totalParcelas }}x de {{ formatCurrency(calcularParcelaPreview()) }}
+              </span>
+            </div>
+
             <div class="form-actions">
               <button 
                 type="button" 
@@ -204,7 +281,7 @@
               <button 
                 type="submit" 
                 class="btn btn-primary submit-btn"
-                :disabled="isSubmitting || !isDescricaoValid || !isValorValid || !isCategoriaValid || !isDataValid"
+                :disabled="isSubmitting || !isDescricaoValid || !isValorValid || !isCategoriaValid || !isDataValid || (formCompra.formaPagamento === 'cartao_parcelado' && !formCompra.totalParcelas && !editMode)"
               >
                 <span v-if="isSubmitting" class="spinner-icon">🔄</span>
                 <span>{{ isSubmitting ? 'Salvando...' : (editMode ? 'Salvar Alterações' : 'Salvar Compra') }}</span>
@@ -334,75 +411,216 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="compra in filteredCompras" :key="compra.id" class="table-row">
-                  <td class="col-desc">
-                    <strong>{{ compra.descricao }}</strong>
-                  </td>
-                  <td class="col-cat">
-                    <span 
-                      class="category-tag" 
-                      :style="{ 
-                        borderLeft: `4px solid ${compra.categoria?.corHex || '#999'}`,
-                        backgroundColor: `${compra.categoria?.corHex || '#999'}15`
-                      }"
+                <template v-for="grupo in comprasAgrupadas" :key="grupo.id || grupo.grupoParcelaId">
+                  <!-- Row: Normal purchase (not a group) -->
+                  <tr v-if="!grupo.isGroup" class="table-row">
+                    <td class="col-desc">
+                      <strong>{{ grupo.descricao }}</strong>
+                      <span v-if="grupo.formaPagamento" class="count-badge" style="margin-left: 0.5rem; font-size: 0.72rem; padding: 0.1rem 0.4rem;">
+                        {{ getFormaPagamentoIcon(grupo.formaPagamento) }} {{ getFormaPagamentoLabel(grupo.formaPagamento) }}
+                      </span>
+                    </td>
+                    <td class="col-cat">
+                      <span 
+                        class="category-tag" 
+                        :style="{ 
+                          borderLeft: `4px solid ${grupo.categoria?.corHex || '#999'}`,
+                          backgroundColor: `${grupo.categoria?.corHex || '#999'}15`
+                        }"
+                      >
+                        <span class="tag-icon">{{ grupo.categoria?.icone }}</span>
+                        <span class="tag-name">{{ grupo.categoria?.nome }}</span>
+                      </span>
+                    </td>
+                    <td class="col-date">{{ formatDate(grupo.data) }}</td>
+                    <td class="col-val text-right">
+                      <strong>{{ formatCurrency(grupo.valor) }}</strong>
+                    </td>
+                    <td class="col-actions text-center">
+                      <button class="action-btn edit" @click="startEdit(grupo)" title="Editar">✏️</button>
+                      <button class="action-btn delete" @click="deleteCompra(grupo)" title="Excluir">❌</button>
+                    </td>
+                  </tr>
+
+                  <!-- Row: Group header (installment group) -->
+                  <template v-else>
+                    <tr class="table-row group-row">
+                      <td class="col-desc">
+                        <button type="button" class="group-toggle-btn" :class="{ expanded: isGroupExpanded(grupo.id) }" @click="toggleGroup(grupo.id)">
+                          ▶
+                        </button>
+                        <strong>{{ grupo.descricao }}</strong>
+                        <span class="count-badge" style="margin-left: 0.5rem; font-size: 0.72rem; padding: 0.1rem 0.4rem; background: var(--primary-glow); border-color: var(--primary);">
+                          💳 {{ getFormaPagamentoLabel(grupo.formaPagamento) }} ({{ grupo.totalParcelas }}x)
+                        </span>
+                      </td>
+                      <td class="col-cat">
+                        <span 
+                          class="category-tag" 
+                          :style="{ 
+                            borderLeft: `4px solid ${grupo.categoria?.corHex || '#999'}`,
+                            backgroundColor: `${grupo.categoria?.corHex || '#999'}15`
+                          }"
+                        >
+                          <span class="tag-icon">{{ grupo.categoria?.icone }}</span>
+                          <span class="tag-name">{{ grupo.categoria?.nome }}</span>
+                        </span>
+                      </td>
+                      <td class="col-date">{{ formatDate(grupo.data) }}</td>
+                      <td class="col-val text-right">
+                        <strong>{{ formatCurrency(grupo.valor) }}</strong>
+                      </td>
+                      <td class="col-actions text-center">
+                        <button class="action-btn delete" @click="deleteCompra(grupo)" title="Excluir Parcelamento Completo">❌</button>
+                      </td>
+                    </tr>
+
+                    <!-- Rows: Group children (installments) -->
+                    <tr 
+                      v-if="isGroupExpanded(grupo.id)" 
+                      v-for="item in grupo.items" 
+                      :key="item.id" 
+                      class="table-row sub-row animate-fade-in"
                     >
-                      <span class="tag-icon">{{ compra.categoria?.icone }}</span>
-                      <span class="tag-name">{{ compra.categoria?.nome }}</span>
-                    </span>
-                  </td>
-                  <td class="col-date">{{ formatDate(compra.data) }}</td>
-                  <td class="col-val text-right">
-                    <strong>{{ formatCurrency(compra.valor) }}</strong>
-                  </td>
-                  <td class="col-actions text-center">
-                    <button class="action-btn edit" @click="startEdit(compra)" title="Editar">✏️</button>
-                    <button class="action-btn delete" @click="deleteCompra(compra.id)" title="Excluir">❌</button>
-                  </td>
-                </tr>
+                      <td class="col-desc indent-cell">
+                        <span>↳ Parcela {{ item.numeroParcela }} de {{ item.totalParcelas }}</span>
+                      </td>
+                      <td class="col-cat">
+                        <span 
+                          class="category-tag" 
+                          :style="{ 
+                            borderLeft: `4px solid ${item.categoria?.corHex || '#999'}`,
+                            backgroundColor: `${item.categoria?.corHex || '#999'}10`
+                          }"
+                        >
+                          <span class="tag-icon">{{ item.categoria?.icone }}</span>
+                          <span class="tag-name">{{ item.categoria?.nome }}</span>
+                        </span>
+                      </td>
+                      <td class="col-date">{{ formatDate(item.data) }}</td>
+                      <td class="col-val text-right">
+                        <strong>{{ formatCurrency(item.valor) }}</strong>
+                      </td>
+                      <td class="col-actions text-center">
+                        <button class="action-btn edit" @click="startEdit(item)" title="Editar Parcela">✏️</button>
+                      </td>
+                    </tr>
+                  </template>
+                </template>
               </tbody>
             </table>
 
             <!-- Mobile Cards View -->
             <div class="purchase-cards-mobile">
-              <div 
-                v-for="compra in filteredCompras" 
-                :key="compra.id" 
-                class="purchase-card glass-panel"
-              >
-                <div class="card-header-row">
-                  <strong class="card-description">{{ compra.descricao }}</strong>
-                  <span 
-                    class="category-tag" 
-                    :style="{ 
-                      borderLeft: `4px solid ${compra.categoria?.corHex || '#999'}`,
-                      backgroundColor: `${compra.categoria?.corHex || '#999'}15`
-                    }"
-                  >
-                    <span class="tag-icon">{{ compra.categoria?.icone }}</span>
-                    <span class="tag-name">{{ compra.categoria?.nome }}</span>
-                  </span>
-                </div>
-                
-                <div class="card-body-row">
-                  <div class="card-info-item">
-                    <span class="card-label">Data</span>
-                    <span class="card-value">{{ formatDate(compra.data) }}</span>
+              <template v-for="grupo in comprasAgrupadas" :key="grupo.id || grupo.grupoParcelaId">
+                <!-- Card: Normal purchase -->
+                <div v-if="!grupo.isGroup" class="purchase-card glass-panel">
+                  <div class="card-header-row">
+                    <strong class="card-description">{{ grupo.descricao }}</strong>
+                    <span v-if="grupo.formaPagamento" class="count-badge" style="font-size: 0.72rem; padding: 0.1rem 0.4rem;">
+                      {{ getFormaPagamentoIcon(grupo.formaPagamento) }} {{ getFormaPagamentoLabel(grupo.formaPagamento) }}
+                    </span>
+                    <span 
+                      class="category-tag" 
+                      :style="{ 
+                        borderLeft: `4px solid ${grupo.categoria?.corHex || '#999'}`,
+                        backgroundColor: `${grupo.categoria?.corHex || '#999'}15`
+                      }"
+                    >
+                      <span class="tag-icon">{{ grupo.categoria?.icone }}</span>
+                      <span class="tag-name">{{ grupo.categoria?.nome }}</span>
+                    </span>
                   </div>
-                  <div class="card-info-item text-right">
-                    <span class="card-label">Valor</span>
-                    <strong class="card-value highlight">{{ formatCurrency(compra.valor) }}</strong>
+                  
+                  <div class="card-body-row">
+                    <div class="card-info-item">
+                      <span class="card-label">Data</span>
+                      <span class="card-value">{{ formatDate(grupo.data) }}</span>
+                    </div>
+                    <div class="card-info-item text-right">
+                      <span class="card-label">Valor</span>
+                      <strong class="card-value highlight">{{ formatCurrency(grupo.valor) }}</strong>
+                    </div>
+                  </div>
+                  
+                  <div class="card-actions-row">
+                    <button class="btn btn-secondary action-btn-tátil" @click="startEdit(grupo)">
+                      <span>✏️ Editar</span>
+                    </button>
+                    <button class="btn btn-danger action-btn-tátil" @click="deleteCompra(grupo)">
+                      <span>❌ Excluir</span>
+                    </button>
                   </div>
                 </div>
-                
-                <div class="card-actions-row">
-                  <button class="btn btn-secondary action-btn-tátil" @click="startEdit(compra)">
-                    <span>✏️ Editar</span>
-                  </button>
-                  <button class="btn btn-danger action-btn-tátil" @click="deleteCompra(compra.id)">
-                    <span>❌ Excluir</span>
-                  </button>
+
+                <!-- Card: Group (Installment purchase) -->
+                <div v-else class="purchase-card glass-panel purchase-card-group-header">
+                  <div class="card-header-row">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                      <button type="button" class="group-toggle-btn" :class="{ expanded: isGroupExpanded(grupo.id) }" @click="toggleGroup(grupo.id)">
+                        ▶
+                      </button>
+                      <strong class="card-description">{{ grupo.descricao }}</strong>
+                    </div>
+                    <span class="count-badge" style="font-size: 0.72rem; padding: 0.1rem 0.4rem; background: var(--primary-glow); border-color: var(--primary);">
+                      💳 {{ getFormaPagamentoLabel(grupo.formaPagamento) }} ({{ grupo.totalParcelas }}x)
+                    </span>
+                    <span 
+                      class="category-tag" 
+                      :style="{ 
+                        borderLeft: `4px solid ${grupo.categoria?.corHex || '#999'}`,
+                        backgroundColor: `${grupo.categoria?.corHex || '#999'}15`
+                      }"
+                    >
+                      <span class="tag-icon">{{ grupo.categoria?.icone }}</span>
+                      <span class="tag-name">{{ grupo.categoria?.nome }}</span>
+                    </span>
+                  </div>
+                  
+                  <div class="card-body-row">
+                    <div class="card-info-item">
+                      <span class="card-label">Data Inicial</span>
+                      <span class="card-value">{{ formatDate(grupo.data) }}</span>
+                    </div>
+                    <div class="card-info-item text-right">
+                      <span class="card-label">Valor do Grupo</span>
+                      <strong class="card-value highlight">{{ formatCurrency(grupo.valor) }}</strong>
+                    </div>
+                  </div>
+                  
+                  <div class="card-actions-row">
+                    <button class="btn btn-danger action-btn-tátil" @click="deleteCompra(grupo)">
+                      <span>❌ Excluir Grupo</span>
+                    </button>
+                  </div>
+
+                  <!-- Children installment list inside group -->
+                  <div v-if="isGroupExpanded(grupo.id)" class="purchase-card-group-children animate-fade-in">
+                    <div 
+                      v-for="item in grupo.items" 
+                      :key="item.id" 
+                      class="purchase-card sub-card glass-panel"
+                      style="padding: 0.75rem;"
+                    >
+                      <div class="card-header-row">
+                        <strong>Parcela {{ item.numeroParcela }} de {{ item.totalParcelas }}</strong>
+                        <span class="card-value">{{ formatDate(item.data) }}</span>
+                      </div>
+                      <div class="card-body-row" style="border: none; padding: 0.25rem 0 0.5rem 0;">
+                        <div class="card-info-item">
+                          <span class="card-label">Valor Parcela</span>
+                          <strong class="card-value highlight" style="font-size: 0.95rem;">{{ formatCurrency(item.valor) }}</strong>
+                        </div>
+                      </div>
+                      <div class="card-actions-row">
+                        <button class="btn btn-secondary action-btn-tátil" style="min-height: 32px !important; padding: 0.25rem 0.5rem;" @click="startEdit(item)">
+                          <span>✏️ Editar Parcela</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              </template>
             </div>
           </template>
         </div>
@@ -536,10 +754,15 @@ export default {
         descricao: '',
         valor: null,
         data: new Date().toISOString().split('T')[0],
-        categoriaId: ''
+        categoriaId: '',
+        formaPagamento: 'dinheiro',
+        totalParcelas: null,
+        numeroParcela: null,
+        grupoParcelaId: null
       },
       valorExibido: 'R$ 0,00',
       editMode: false,
+      expandedGroups: {},
 
       // Modal Categorias
       categoryModalOpen: false,
@@ -755,6 +978,44 @@ export default {
       });
 
       return slices;
+    },
+    comprasAgrupadas() {
+      const groups = [];
+      const groupMap = {};
+
+      this.filteredCompras.forEach(compra => {
+        if (compra.grupoParcelaId) {
+          if (!groupMap[compra.grupoParcelaId]) {
+            groupMap[compra.grupoParcelaId] = {
+              id: compra.grupoParcelaId,
+              isGroup: true,
+              descricao: compra.descricao,
+              categoria: compra.categoria,
+              categoriaId: compra.categoriaId,
+              formaPagamento: compra.formaPagamento,
+              totalParcelas: compra.totalParcelas,
+              grupoParcelaId: compra.grupoParcelaId,
+              data: compra.data,
+              items: [],
+              get valor() {
+                return this.items.reduce((sum, item) => sum + item.valor, 0);
+              }
+            };
+            groups.push(groupMap[compra.grupoParcelaId]);
+          }
+          groupMap[compra.grupoParcelaId].items.push(compra);
+          if (compra.data < groupMap[compra.grupoParcelaId].data) {
+            groupMap[compra.grupoParcelaId].data = compra.data;
+          }
+        } else {
+          groups.push({
+            ...compra,
+            isGroup: false
+          });
+        }
+      });
+
+      return groups;
     }
   },
   methods: {
@@ -775,6 +1036,36 @@ export default {
         this.confirmModal.resolve = resolve;
         this.confirmModal.show = true;
       });
+    },
+    calcularParcelaPreview() {
+      if (!this.formCompra.valor || !this.formCompra.totalParcelas) return 0;
+      return this.formCompra.valor / this.formCompra.totalParcelas;
+    },
+    getFormaPagamentoLabel(type) {
+      const labels = {
+        dinheiro: 'Dinheiro',
+        debito: 'Débito',
+        pix: 'Pix',
+        cartao_avista: 'Cartão à Vista',
+        cartao_parcelado: 'Cartão Parcelado'
+      };
+      return labels[type] || 'Não Informado';
+    },
+    getFormaPagamentoIcon(type) {
+      const icons = {
+        dinheiro: '💵',
+        debito: '💳',
+        pix: '📱',
+        cartao_avista: '💳',
+        cartao_parcelado: '💳'
+      };
+      return icons[type] || '❓';
+    },
+    toggleGroup(groupId) {
+      this.expandedGroups[groupId] = !this.expandedGroups[groupId];
+    },
+    isGroupExpanded(groupId) {
+      return !!this.expandedGroups[groupId];
     },
 
     // Currency Input Formatter Helpers
@@ -959,15 +1250,30 @@ export default {
         
         const method = this.editMode ? 'PUT' : 'POST';
         
-        const res = await this.fetchWithAuth(url, {
-          method: method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        let bodyPayload;
+        if (this.editMode) {
+          bodyPayload = {
+            id: this.formCompra.id,
             descricao: this.formCompra.descricao,
             valor: valorParseado,
             data: this.formCompra.data + "T12:00:00",
             categoriaId: this.formCompra.categoriaId
-          })
+          };
+        } else {
+          bodyPayload = {
+            descricao: this.formCompra.descricao,
+            valorTotal: valorParseado,
+            data: this.formCompra.data + "T12:00:00",
+            categoriaId: this.formCompra.categoriaId,
+            formaPagamento: this.formCompra.formaPagamento,
+            totalParcelas: this.formCompra.totalParcelas ? parseInt(this.formCompra.totalParcelas, 10) : null
+          };
+        }
+
+        const res = await this.fetchWithAuth(url, {
+          method: method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(bodyPayload)
         });
 
         if (res.ok) {
@@ -995,6 +1301,10 @@ export default {
       this.valorExibido = this.formatCurrency(compra.valor);
       this.formCompra.data = compra.data ? compra.data.split('T')[0] : this.getTodayDateString();
       this.formCompra.categoriaId = compra.categoriaId;
+      this.formCompra.formaPagamento = compra.formaPagamento;
+      this.formCompra.totalParcelas = compra.totalParcelas;
+      this.formCompra.numeroParcela = compra.numeroParcela;
+      this.formCompra.grupoParcelaId = compra.grupoParcelaId;
 
       // Rolagem suave até o formulário e foco automático para feedback visual imediato
       this.$nextTick(() => {
@@ -1014,11 +1324,23 @@ export default {
       this.valorExibido = 'R$ 0,00';
       this.formCompra.data = new Date().toISOString().split('T')[0];
       this.formCompra.categoriaId = '';
+      this.formCompra.formaPagamento = 'dinheiro';
+      this.formCompra.totalParcelas = null;
+      this.formCompra.numeroParcela = null;
+      this.formCompra.grupoParcelaId = null;
     },
 
-    async deleteCompra(id) {
-      const confirmed = await this.showConfirm('Deseja realmente excluir esta compra?');
+    async deleteCompra(item) {
+      let confirmed;
+      if (item.isGroup || (item.formaPagamento === 'cartao_parcelado' && item.grupoParcelaId)) {
+        confirmed = await this.showConfirm(`Esta compra é parcelada (${item.totalParcelas || item.items[0]?.totalParcelas}x). Deseja realmente excluir TODAS as parcelas deste grupo?`);
+      } else {
+        confirmed = await this.showConfirm('Deseja realmente excluir esta compra?');
+      }
+      
       if (!confirmed) return;
+      
+      const id = item.isGroup ? item.items[0].id : item.id;
       
       try {
         const res = await this.fetchWithAuth(`${API_BASE}/compras/${id}`, {
@@ -1911,5 +2233,109 @@ export default {
   }
 
   /* O layout já é flex-col por padrão */
+}
+/* Payment Methods UI */
+.payment-methods-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.payment-method-btn {
+  background: var(--surface-1);
+  border: 1px solid var(--border-glass);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 0.65rem 0.5rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  outline: none;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  text-align: center;
+  user-select: none;
+}
+
+.payment-method-btn:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: var(--surface-3);
+  border-color: var(--border-glass-focus);
+}
+
+.payment-method-btn.active {
+  color: #fff !important;
+  background: linear-gradient(135deg, var(--primary) 0%, hsl(263, 80%, 55%) 100%) !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 2px 10px hsla(263, 80%, 62%, 0.2);
+}
+
+.payment-method-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.payment-method-readonly {
+  margin-top: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  background: hsla(var(--hue-base) 30% 25% / 0.1);
+  border: 1px dashed var(--border-glass);
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
+.payment-method-readonly strong {
+  color: var(--text-primary);
+}
+
+/* Group row styles */
+.group-row {
+  background-color: hsla(var(--hue-base) 30% 25% / 0.08) !important;
+  border-left: 3px solid var(--primary) !important;
+}
+
+.group-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-right: 0.5rem;
+  transition: transform var(--transition-fast);
+  display: inline-block;
+}
+
+.group-toggle-btn.expanded {
+  transform: rotate(90deg);
+}
+
+.sub-row {
+  background-color: hsla(var(--hue-base) 30% 25% / 0.03) !important;
+  opacity: 0.95;
+}
+
+.indent-cell {
+  padding-left: 2rem !important;
+}
+
+/* Card hierarchy in mobile */
+.purchase-card-group-header {
+  border-left: 4px solid var(--primary) !important;
+  background: hsla(var(--hue-base) 30% 25% / 0.08) !important;
+}
+
+.purchase-card-group-children {
+  margin-left: 1rem;
+  border-left: 1px dashed var(--border-glass);
+  padding-left: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 </style>
