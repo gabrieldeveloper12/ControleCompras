@@ -198,15 +198,6 @@
                 <button 
                   type="button" 
                   class="payment-method-btn" 
-                  :class="{ active: formCompra.formaPagamento === 'dinheiro' }"
-                  @click="formCompra.formaPagamento = 'dinheiro'; formCompra.totalParcelas = null"
-                  :disabled="isSubmitting"
-                >
-                  💵 Dinheiro
-                </button>
-                <button 
-                  type="button" 
-                  class="payment-method-btn" 
                   :class="{ active: formCompra.formaPagamento === 'debito' }"
                   @click="formCompra.formaPagamento = 'debito'; formCompra.totalParcelas = null"
                   :disabled="isSubmitting"
@@ -869,7 +860,7 @@ export default {
         valor: null,
         data: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0],
         categoriaId: '',
-        formaPagamento: 'dinheiro',
+        formaPagamento: 'pix',
         totalParcelas: null,
         numeroParcela: null,
         grupoParcelaId: null
@@ -1465,7 +1456,7 @@ export default {
       this.valorExibido = 'R$ 0,00';
       this.formCompra.data = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
       this.formCompra.categoriaId = '';
-      this.formCompra.formaPagamento = 'dinheiro';
+      this.formCompra.formaPagamento = 'pix';
       this.formCompra.totalParcelas = null;
       this.formCompra.numeroParcela = null;
       this.formCompra.grupoParcelaId = null;
