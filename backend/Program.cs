@@ -78,6 +78,9 @@ using (var scope = app.Services.CreateScope())
         {
             // Se as tabelas já existirem, ignoramos o erro e prosseguimos
         }
+
+        // Aplica todas as migrações pendentes no banco de dados (SQLite local ou Postgres no Render)
+        context.Database.Migrate();
     }
     catch (Exception ex)
     {
