@@ -44,7 +44,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AuthLayout from '../components/AuthLayout.vue'
 import { useAuthStore } from '../stores/auth'
@@ -57,6 +57,11 @@ const errorMsg = ref('')
 
 const authStore = useAuthStore()
 const router = useRouter()
+
+onMounted(() => {
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5076'
+  fetch(`${baseUrl}/health`).catch(() => {})
+})
 
 async function handleLogin() {
   if (!email.value || !password.value) {

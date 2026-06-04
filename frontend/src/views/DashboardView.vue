@@ -692,30 +692,61 @@
                 />
                 
                 <input 
-                  type="text" 
-                  v-model="formCat.icone" 
-                  class="input-control icon-input" 
-                  placeholder="Ícone (ex: 🎮)"
-                  required
-                />
-                
-                <input 
                   type="color" 
                   v-model="formCat.corHex" 
                   class="input-control color-input" 
                   title="Cor da Categoria"
                 />
+              </div>
 
-                <div class="cat-form-actions">
-                  <button v-if="editCatMode" type="button" class="btn btn-secondary btn-sm" @click="cancelCatEdit">
-                    Cancelar
-                  </button>
-                  <button type="submit" class="btn btn-primary btn-sm">
-                    {{ editCatMode ? 'Salvar' : 'Adicionar' }}
+              <!-- Seletor de Emojis -->
+              <div class="emoji-selector-group">
+                <label class="input-label">Ícone (Emoji)</label>
+                <div class="emoji-grid">
+                  <button
+                    v-for="emoji in emojiOptions"
+                    :key="emoji"
+                    type="button"
+                    class="emoji-btn"
+                    :class="{ active: formCat.icone === emoji }"
+                    @click="formCat.icone = emoji"
+                  >
+                    {{ emoji }}
                   </button>
                 </div>
+                <input 
+                  type="text" 
+                  v-model="formCat.icone" 
+                  class="input-control icon-input-fallback" 
+                  placeholder="Outro emoji..."
+                  required
+                />
+              </div>
+
+              <div class="cat-form-actions" style="margin-top: 1rem; justify-content: flex-end;">
+                <button v-if="editCatMode" type="button" class="btn btn-secondary btn-sm" :disabled="isSubmittingCat" @click="cancelCatEdit">
+                  Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary btn-sm" :disabled="isSubmittingCat">
+                  {{ isSubmittingCat ? 'Salvando...' : (editCatMode ? 'Salvar' : 'Adicionar') }}
+                </button>
               </div>
             </form>
+
+            <!-- Preview da Categoria -->
+            <div class="cat-preview">
+              <span class="cat-preview-label">Preview:</span>
+              <span 
+                class="category-tag cat-preview-badge" 
+                :style="{ 
+                  borderLeft: `4px solid ${previewCategoria.corHex}`,
+                  backgroundColor: `${previewCategoria.corHex}15`
+                }"
+              >
+                <span class="tag-icon">{{ previewCategoria.icone }}</span>
+                <span class="tag-name">{{ previewCategoria.nome }}</span>
+              </span>
+            </div>
           </div>
 
           <!-- List of Existing Categories -->
@@ -731,6 +762,7 @@
                 <div class="cat-item-info">
                   <span class="cat-item-icon">{{ cat.icone }}</span>
                   <span class="cat-item-name">{{ cat.nome }}</span>
+                  <span class="cat-color-dot" :style="{ backgroundColor: cat.corHex }"></span>
                   <span class="cat-item-color-label">{{ cat.corHex }}</span>
                 </div>
                 <div class="cat-item-actions">
@@ -815,6 +847,8 @@ export default {
         corHex: '#9E9E9E'
       },
       editCatMode: false,
+      isSubmittingCat: false,
+      emojiOptions: ['🛒','💊','🚗','🍔','🏠','🎮','✈️','👕','📱','💰','🏋️','📚','🎬','🐾','🎵','💄','🍷','☕','🧴','🔧','🎁','🏥','🐶','📦'],
       isSubmitting: false,
       hoveredSlice: null,
       animateChart: false,
@@ -858,6 +892,13 @@ export default {
     }
   },
   computed: {
+    previewCategoria() {
+      return {
+        nome: this.formCat.nome || 'Nova Categoria',
+        icone: this.formCat.icone || '📦',
+        corHex: this.formCat.corHex || '#9E9E9E'
+      };
+    },
     isDescricaoValid() {
       return this.formCompra.descricao.trim().length >= 3;
     },
@@ -1428,7 +1469,12 @@ export default {
       this.categoryModalOpen = false;
     },
     async saveCategoria() {
+      if (!this.formCat.icone || !this.formCat.icone.trim()) {
+        window.showToast('O ícone da categoria é obrigatório.', 'error');
+        return;
+      }
       try {
+        this.isSubmittingCat = true;
         const url = this.editCatMode 
           ? `${API_BASE}/categorias/${this.formCat.id}`
           : `${API_BASE}/categorias`;
@@ -1458,6 +1504,8 @@ export default {
       } catch (err) {
         console.error('Erro ao salvar categoria:', err);
         window.showToast('Erro ao salvar a categoria.', 'error');
+      } finally {
+        this.isSubmittingCat = false;
       }
     },
     startCatEdit(cat) {
@@ -2175,6 +2223,83 @@ export default {
 .cat-item-actions {
   display: flex;
   align-items: center;
+}
+
+/* Category Modal UX Enhancements */
+.cat-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface-1);
+  border: 1px dashed var(--border-glass);
+  border-radius: var(--radius-sm);
+}
+
+.cat-preview-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.emoji-selector-group {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.5rem;
+  max-width: 250px;
+  margin-top: 0.25rem;
+}
+
+.emoji-btn {
+  width: 32px;
+  height: 32px;
+  font-size: 1.15rem;
+  background: var(--surface-1);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.emoji-btn:hover {
+  background: var(--surface-3);
+  transform: scale(1.1);
+}
+
+.emoji-btn.active {
+  background: var(--primary-glow) !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 8px var(--primary-glow);
+  transform: scale(1.15);
+}
+
+.icon-input-fallback {
+  margin-top: 0.25rem;
+  max-width: 150px;
+  text-align: center;
+}
+
+.cat-color-dot {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+  border: 1px solid rgba(255,255,255,0.2);
 }
 
 /* RESPONSIVE DESIGN */

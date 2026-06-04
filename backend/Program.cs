@@ -135,6 +135,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapGet("/", () => "Controle de Compras API está online e banco de dados configurado!");
+app.MapGet("/health", () => Results.Ok("healthy"));
 
 // ==========================================
 // AUTH ENDPOINTS
@@ -151,7 +152,7 @@ app.MapPost("/api/auth/register", async (RegisterRequest req, ComprasDbContext d
     {
         Email = req.Email,
         Nome = string.IsNullOrWhiteSpace(req.Nome) ? req.Email : req.Nome,
-        SenhaHash = BCrypt.Net.BCrypt.HashPassword(req.Password)
+        SenhaHash = BCrypt.Net.BCrypt.HashPassword(req.Password, workFactor: 10)
     };
     
     db.Usuarios.Add(user);
