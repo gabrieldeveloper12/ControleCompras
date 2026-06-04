@@ -682,7 +682,8 @@
           <div class="modal-form-box">
             <h4>{{ editCatMode ? 'Editar Categoria' : 'Nova Categoria' }}</h4>
             <form @submit.prevent="saveCategoria" class="cat-form">
-              <div class="form-row-cat">
+              <div class="form-group" style="margin-bottom: 1.25rem;">
+                <label class="input-label">Nome da Categoria</label>
                 <input 
                   type="text" 
                   v-model="formCat.nome" 
@@ -690,40 +691,74 @@
                   placeholder="Nome (ex: Lazer)"
                   required
                 />
-                
-                <input 
-                  type="color" 
-                  v-model="formCat.corHex" 
-                  class="input-control color-input" 
-                  title="Cor da Categoria"
-                />
+              </div>
+              
+              <!-- Seletor de Cores Curado -->
+              <div class="color-selector-group" style="margin-bottom: 1.25rem;">
+                <label class="input-label">Cor da Categoria</label>
+                <div class="color-grid">
+                  <button
+                    v-for="color in colorOptions"
+                    :key="color"
+                    type="button"
+                    class="color-btn"
+                    :style="{ backgroundColor: color }"
+                    :class="{ active: formCat.corHex === color }"
+                    @click="formCat.corHex = color"
+                    title="Selecionar cor"
+                  ></button>
+                  
+                  <div class="custom-color-picker-wrapper">
+                    <button 
+                      type="button" 
+                      class="color-btn custom-color-trigger" 
+                      :style="{ background: !colorOptions.includes(formCat.corHex) ? formCat.corHex : 'conic-gradient(red, yellow, green, cyan, blue, magenta, red)' }"
+                      :class="{ active: !colorOptions.includes(formCat.corHex) }"
+                      title="Outra cor..."
+                    >
+                      🎨
+                    </button>
+                    <input 
+                      type="color" 
+                      v-model="formCat.corHex" 
+                      class="custom-color-input"
+                    />
+                  </div>
+                </div>
               </div>
 
               <!-- Seletor de Emojis -->
-              <div class="emoji-selector-group">
-                <label class="input-label">Ícone (Emoji)</label>
-                <div class="emoji-grid">
-                  <button
-                    v-for="emoji in emojiOptions"
-                    :key="emoji"
-                    type="button"
-                    class="emoji-btn"
-                    :class="{ active: formCat.icone === emoji }"
-                    @click="formCat.icone = emoji"
-                  >
-                    {{ emoji }}
-                  </button>
+              <div class="emoji-selector-group" style="margin-bottom: 1.25rem;">
+                <label class="input-label">Ícone da Categoria</label>
+                <div class="emoji-container">
+                  <div class="emoji-grid">
+                    <button
+                      v-for="emoji in emojiOptions"
+                      :key="emoji"
+                      type="button"
+                      class="emoji-btn"
+                      :class="{ active: formCat.icone === emoji }"
+                      :style="formCat.icone === emoji ? { borderColor: formCat.corHex, boxShadow: `0 0 10px ${formCat.corHex}` } : {}"
+                      @click="formCat.icone = emoji"
+                    >
+                      {{ emoji }}
+                    </button>
+                  </div>
+                  <div class="emoji-fallback-box">
+                    <span class="emoji-fallback-icon">✏️</span>
+                    <input 
+                      type="text" 
+                      v-model="formCat.icone" 
+                      class="input-control emoji-fallback-input" 
+                      placeholder="Emoji personalizado..."
+                      maxlength="2"
+                      required
+                    />
+                  </div>
                 </div>
-                <input 
-                  type="text" 
-                  v-model="formCat.icone" 
-                  class="input-control icon-input-fallback" 
-                  placeholder="Outro emoji..."
-                  required
-                />
               </div>
 
-              <div class="cat-form-actions" style="margin-top: 1rem; justify-content: flex-end;">
+              <div class="cat-form-actions" style="margin-top: 1.5rem; justify-content: flex-end;">
                 <button v-if="editCatMode" type="button" class="btn btn-secondary btn-sm" :disabled="isSubmittingCat" @click="cancelCatEdit">
                   Cancelar
                 </button>
@@ -734,7 +769,7 @@
             </form>
 
             <!-- Preview da Categoria -->
-            <div class="cat-preview">
+            <div class="cat-preview" style="margin-top: 1.5rem;">
               <span class="cat-preview-label">Preview:</span>
               <span 
                 class="category-tag cat-preview-badge" 
@@ -849,6 +884,7 @@ export default {
       editCatMode: false,
       isSubmittingCat: false,
       emojiOptions: ['🛒','💊','🚗','🍔','🏠','🎮','✈️','👕','📱','💰','🏋️','📚','🎬','🐾','🎵','💄','🍷','☕','🧴','🔧','🎁','🏥','🐶','📦'],
+      colorOptions: ['#FF6B6B', '#FF8E53', '#FFD043', '#10B981', '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#F59E0B', '#84CC16', '#14B8A6', '#A855F7', '#6B7280'],
       isSubmitting: false,
       hoveredSlice: null,
       animateChart: false,
@@ -2245,6 +2281,68 @@ export default {
   letter-spacing: 0.05em;
 }
 
+.color-selector-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.color-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.color-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.color-btn:hover {
+  transform: scale(1.15);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+}
+
+.color-btn.active {
+  border-color: #fff;
+  transform: scale(1.15);
+  box-shadow: 0 0 0 2px var(--primary);
+}
+
+.custom-color-picker-wrapper {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.custom-color-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+}
+
+.custom-color-trigger {
+  font-size: 1.1rem;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
 .emoji-selector-group {
   margin-top: 1rem;
   display: flex;
@@ -2252,20 +2350,29 @@ export default {
   gap: 0.5rem;
 }
 
+.emoji-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: hsla(var(--hue-base) 10% 20% / 0.15);
+  border: 1px solid var(--border-glass);
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+}
+
 .emoji-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(8, 1fr);
   gap: 0.5rem;
-  max-width: 250px;
-  margin-top: 0.25rem;
+  justify-items: center;
 }
 
 .emoji-btn {
-  width: 32px;
-  height: 32px;
-  font-size: 1.15rem;
+  width: 36px;
+  height: 36px;
+  font-size: 1.3rem;
   background: var(--surface-1);
-  border: 1px solid var(--border-glass);
+  border: 1.5px solid var(--border-glass);
   border-radius: var(--radius-sm);
   cursor: pointer;
   display: flex;
@@ -2276,20 +2383,40 @@ export default {
 
 .emoji-btn:hover {
   background: var(--surface-3);
-  transform: scale(1.1);
+  transform: scale(1.15) translateY(-2px);
 }
 
 .emoji-btn.active {
-  background: var(--primary-glow) !important;
+  background: var(--surface-4) !important;
   border-color: var(--primary) !important;
-  box-shadow: 0 0 8px var(--primary-glow);
-  transform: scale(1.15);
+  transform: scale(1.15) translateY(-2px);
 }
 
-.icon-input-fallback {
-  margin-top: 0.25rem;
-  max-width: 150px;
-  text-align: center;
+.emoji-fallback-box {
+  display: flex;
+  align-items: center;
+  background: var(--surface-1);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  padding: 0 0.75rem;
+  gap: 0.5rem;
+  max-width: 200px;
+}
+
+.emoji-fallback-icon {
+  font-size: 0.95rem;
+  opacity: 0.7;
+}
+
+.emoji-fallback-input {
+  border: none !important;
+  background: transparent !important;
+  padding: 0.5rem 0 !important;
+  font-size: 0.9rem;
+  width: 100%;
+  color: var(--text-primary);
+  outline: none;
+  box-shadow: none !important;
 }
 
 .cat-color-dot {
