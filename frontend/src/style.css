@@ -95,7 +95,7 @@
 
 [data-theme="light"] body::before,
 [data-theme="light"] body::after {
-  display: none !important;
+  opacity: 0.08 !important;
 }
 
 html {
@@ -126,7 +126,7 @@ body {
 /* Background Glowing Orbs for Premium Ambient */
 body::before {
   content: '';
-  position: absolute;
+  position: fixed;
   top: -10%;
   left: -10%;
   width: 50vw;
@@ -134,12 +134,13 @@ body::before {
   background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
   z-index: -1;
   pointer-events: none;
-  filter: blur(80px);
+  filter: blur(40px);
+  will-change: transform;
 }
 
 body::after {
   content: '';
-  position: absolute;
+  position: fixed;
   bottom: -10%;
   right: -10%;
   width: 45vw;
@@ -147,7 +148,8 @@ body::after {
   background: radial-gradient(circle, var(--secondary-glow) 0%, transparent 70%);
   z-index: -1;
   pointer-events: none;
-  filter: blur(80px);
+  filter: blur(40px);
+  will-change: transform;
 }
 
 /* Typography & Titles */
@@ -176,12 +178,15 @@ h1, h2, h3, h4, h5, h6 {
 /* Glassmorphism Styles */
 .glass-panel {
   background: var(--bg-card);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border-glass);
   box-shadow: var(--shadow-glass);
   border-radius: var(--radius-md);
   transition: border-color var(--transition-normal), transform var(--transition-normal), background var(--transition-normal);
+  contain: layout style;
+}
+
+.glass-panel-hover {
+  will-change: transform;
 }
 
 .glass-panel-hover:hover {
@@ -656,9 +661,22 @@ th.sortable span {
   margin-left: 0.25rem;
 }
 
-/* ── Search Bar in Header ── */
+/* ── Search Bar and Page Size Select in Header ── */
+.list-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
 .search-bar {
   max-width: 300px;
+  width: 240px;
+}
+
+.page-size-select {
+  width: 130px;
+  flex-shrink: 0;
 }
 
 @media (max-width: 640px) {
@@ -666,10 +684,16 @@ th.sortable span {
     flex-wrap: wrap;
     gap: 1rem;
   }
-  .search-bar {
-    max-width: 100%;
+  .list-controls {
     order: 3;
     width: 100%;
+  }
+  .search-bar {
+    flex: 1;
+    max-width: none;
+  }
+  .page-size-select {
+    width: 120px;
   }
 }
 
@@ -700,4 +724,10 @@ th.sortable span {
   color: var(--text-secondary);
   font-weight: 500;
   line-height: 1.4;
+}
+
+/* ── Prevent body scroll when modal is open ── */
+body.modal-open {
+  overflow: hidden !important;
+  scrollbar-gutter: stable;
 }

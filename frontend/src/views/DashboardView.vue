@@ -371,12 +371,20 @@
       <section class="glass-panel list-section animate-fade-in" style="animation-delay: 0.2s">
         <div class="list-header">
           <h3 class="card-title">Registros de Compras</h3>
-          <input 
-            type="text" 
-            v-model="searchQuery" 
-            class="input-control search-bar" 
-            placeholder="Buscar por descrição..." 
-          />
+          <div class="list-controls">
+            <input 
+              type="text" 
+              v-model="searchQuery" 
+              class="input-control search-bar" 
+              placeholder="Buscar por descrição..." 
+            />
+            <select v-model.number="pageSize" class="select-control page-size-select" title="Registros por página">
+              <option :value="5">5 por pág.</option>
+              <option :value="10">10 por pág.</option>
+              <option :value="20">20 por pág.</option>
+              <option :value="50">50 por pág.</option>
+            </select>
+          </div>
           <span class="count-badge">{{ filteredCountText }}</span>
         </div>
 
@@ -906,7 +914,7 @@ export default {
 
       // Paginação
       currentPage: 1,
-      pageSize: 10
+      pageSize: parseInt(localStorage.getItem('controle_compras_pageSize') || '10', 10) || 10
     }
   },
   watch: {
@@ -921,6 +929,24 @@ export default {
     // Resetar página ao mudar dados
     compras() {
       this.currentPage = 1;
+    },
+    pageSize(newVal) {
+      localStorage.setItem('controle_compras_pageSize', newVal.toString());
+      this.currentPage = 1;
+    },
+    categoryModalOpen(isOpen) {
+      if (isOpen || this.confirmModal.show) {
+        document.body.classList.add('modal-open');
+      } else {
+        document.body.classList.remove('modal-open');
+      }
+    },
+    'confirmModal.show'(isOpen) {
+      if (isOpen || this.categoryModalOpen) {
+        document.body.classList.add('modal-open');
+      } else {
+        document.body.classList.remove('modal-open');
+      }
     }
   },
   computed: {
@@ -1600,6 +1626,9 @@ export default {
         inputDesc.focus();
       }
     });
+  },
+  beforeUnmount() {
+    document.body.classList.remove('modal-open');
   }
 }
 </script>
@@ -1798,6 +1827,7 @@ export default {
   background: var(--surface-1);
   border: 1px solid var(--border-glass);
   transition: background-color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+  will-change: transform;
 }
 
 .legend-item:hover {
@@ -2088,6 +2118,7 @@ export default {
   margin: 0 0.25rem;
   border-radius: 4px;
   transition: all var(--transition-fast);
+  will-change: transform;
 }
 
 .action-btn:hover {
