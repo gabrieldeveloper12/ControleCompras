@@ -2524,8 +2524,43 @@ export default {
     flex: 1;
   }
 
+  /* Task 1.1: Modal scroll containment in mobile */
   .modal-content {
     padding: 1.5rem;
+    max-height: 90vh;
+    max-height: 90dvh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Task 1.2: Modal overlay top-aligned so modal doesn't get cut at top */
+  .modal-overlay {
+    align-items: flex-start;
+    padding-top: 1rem;
+  }
+
+  /* Task 2.1: Emoji buttons larger for touch (40x40px) */
+  .emoji-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 1.15rem;
+  }
+
+  /* Task 3.1: Color buttons larger for touch (36x36px) */
+  .color-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Task 3.2: Color grid gap adjusted for larger buttons */
+  .color-grid {
+    gap: 0.5rem;
+  }
+
+  /* Task 4.1: Remove double-scroll on cat-list; modal handles scroll */
+  .cat-list-container {
+    max-height: none;
+    overflow-y: visible;
   }
 }
 
@@ -2565,7 +2600,25 @@ export default {
     margin: 0 auto !important;
   }
 
-  /* O layout já é flex-col por padrão */
+  /* Task 2.2: Emoji grid 6 columns on very small screens (avoids horizontal overflow) */
+  .emoji-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  /* Task 2.3: Emoji container full width (removes fixed 280px) */
+  .emoji-container {
+    max-width: 100%;
+  }
+
+  /* Task 5.1: Reduce modal padding to maximize usable space */
+  .modal-content {
+    padding: 1rem;
+  }
+
+  /* Task 5.2: Reduce modal form box padding */
+  .modal-form-box {
+    padding: 0.75rem;
+  }
 }
 /* Payment Methods UI */
 .payment-methods-grid {
