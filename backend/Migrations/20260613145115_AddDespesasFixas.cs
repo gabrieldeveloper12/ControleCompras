@@ -27,7 +27,7 @@ namespace backend.Migrations
                     Valor = table.Column<double>(type: "REAL", nullable: false),
                     DiaVencimento = table.Column<int>(type: "INTEGER", nullable: false),
                     Ativa = table.Column<bool>(nullable: false, defaultValue: true),
-                    DataCriacao = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    DataCriacao = table.Column<DateTime>(nullable: false),
                     CategoriaId = table.Column<int>(type: "INTEGER", nullable: false),
                     UsuarioId = table.Column<int>(type: "INTEGER", nullable: false)
                 },
@@ -58,7 +58,7 @@ namespace backend.Migrations
                     Mes = table.Column<int>(type: "INTEGER", nullable: false),
                     Ano = table.Column<int>(type: "INTEGER", nullable: false),
                     Pago = table.Column<bool>(nullable: false),
-                    DataPagamento = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    DataPagamento = table.Column<DateTime>(nullable: true),
                     ValorPago = table.Column<double>(type: "REAL", nullable: false),
                     CompraGeradaId = table.Column<int>(type: "INTEGER", nullable: true)
                 },
