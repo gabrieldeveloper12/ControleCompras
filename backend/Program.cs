@@ -116,9 +116,15 @@ using (var scope = app.Services.CreateScope())
 
         // Aplica todas as migrações pendentes no banco de dados (SQLite local ou Postgres no Render)
         context.Database.Migrate();
+        // Remove old error file if migrations succeed
+        if (File.Exists("migration_error.txt"))
+        {
+            try { File.Delete("migration_error.txt"); } catch {}
+        }
     }
     catch (Exception ex)
     {
+        try { File.WriteAllText("migration_error.txt", ex.ToString()); } catch {}
         var logger = services.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "Ocorreu um erro ao rodar as migrações ou ao realizar o Seed do banco.");
     }
@@ -136,6 +142,30 @@ if (app.Environment.IsDevelopment())
 
 app.MapGet("/", () => "Controle de Compras API está online e banco de dados configurado!");
 app.MapGet("/health", () => Results.Ok("healthy"));
+app.MapGet("/api/debug-db", async (ComprasDbContext context) =>
+{
+    try
+    {
+        var pending = await context.Database.GetPendingMigrationsAsync();
+        var applied = await context.Database.GetAppliedMigrationsAsync();
+        string? migrationError = null;
+        if (File.Exists("migration_error.txt"))
+        {
+            migrationError = await File.ReadAllTextAsync("migration_error.txt");
+        }
+        return Results.Ok(new
+        {
+            Provider = context.Database.ProviderName,
+            Pending = pending,
+            Applied = applied,
+            MigrationError = migrationError
+        });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem(ex.ToString());
+    }
+});
 
 // ==========================================
 // AUTH ENDPOINTS
