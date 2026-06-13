@@ -1,143 +1,146 @@
 <template>
   <div class="page-content">
-    <main class="main-content">
-      <div class="dashboard-grid animate-fade-in">
-        <!-- Coluna Esquerda: Gerenciamento dos Templates de Despesas Fixas -->
-        <div class="templates-section">
-          <!-- Form Cadastro/Edição de Despesa Fixa -->
-          <div class="glass-panel form-card" style="margin-bottom: 2rem;">
-            <h3 class="card-title">{{ editMode ? 'Editar Despesa Fixa' : 'Cadastrar Despesa Fixa' }}</h3>
-            
-            <form @submit.prevent="saveDespesa" class="purchase-form">
-              <div class="form-group">
-                <label class="input-label" for="descricao">Descrição</label>
-                <input 
-                  id="descricao"
-                  type="text" 
-                  v-model="formDespesa.descricao" 
-                  class="input-control" 
-                  :class="{ 'valid': isDescricaoValid, 'invalid': isDescricaoInvalid }"
-                  :disabled="isSubmitting"
-                  placeholder="Ex: Aluguel do Apartamento"
-                  required
-                />
-                <span class="input-hint" :class="{ 'error': isDescricaoInvalid }">
-                  {{ isDescricaoInvalid ? 'Mínimo de 3 caracteres.' : 'Mínimo de 3 caracteres (Ex: Internet, Academia).' }}
-                </span>
-              </div>
+    <main class="main-content animate-fade-in">
+      
+      <!-- Topo: Formulário de Cadastro/Edição de Despesa Fixa -->
+      <section class="glass-panel form-card" style="margin-bottom: 2rem;">
+        <h3 class="card-title">{{ editMode ? 'Editar Despesa Fixa' : 'Cadastrar Despesa Fixa' }}</h3>
+        
+        <form @submit.prevent="saveDespesa" class="purchase-form">
+          <div class="despesas-form-grid">
+            <!-- Descrição -->
+            <div class="form-group descricao-col">
+              <label class="input-label" for="descricao">Descrição</label>
+              <input 
+                id="descricao"
+                type="text" 
+                v-model="formDespesa.descricao" 
+                class="input-control" 
+                :class="{ 'valid': isDescricaoValid, 'invalid': isDescricaoInvalid }"
+                :disabled="isSubmitting"
+                placeholder="Ex: Aluguel do Apartamento"
+                required
+              />
+              <span class="input-hint" :class="{ 'error': isDescricaoInvalid }">
+                {{ isDescricaoInvalid ? 'Mínimo de 3 caracteres.' : 'Mínimo de 3 caracteres (Ex: Internet).' }}
+              </span>
+            </div>
 
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="input-label" for="valor">Valor (R$)</label>
-                  <input 
-                    id="valor"
-                    type="text" 
-                    inputmode="decimal"
-                    v-model="valorExibido" 
-                    @input="onValorInput($event)"
-                    @click="onValorClick($event)"
-                    @keyup="onValorKeyup($event)"
-                    class="input-control" 
-                    :class="{ 'valid': isValorValid, 'invalid': isValorInvalid }"
-                    :disabled="isSubmitting"
-                    placeholder="0,00"
-                    required
-                    @focus="onValorFocus($event)"
-                    @blur="onValorBlur"
-                  />
-                  <span class="input-hint" :class="{ 'error': isValorInvalid }">
-                    {{ isValorInvalid ? 'Insira um valor numérico válido.' : 'Valor da despesa.' }}
-                  </span>
-                </div>
-
-                <div class="form-group">
-                  <label class="input-label" for="diaVencimento">Dia Vencimento</label>
-                  <input 
-                    id="diaVencimento"
-                    type="number" 
-                    min="1"
-                    max="31"
-                    v-model.number="formDespesa.diaVencimento" 
-                    class="input-control" 
-                    :class="{ 'valid': isDiaVencimentoValid }"
-                    :disabled="isSubmitting"
-                    placeholder="10"
-                    required
-                  />
-                  <span class="input-hint">Dia do mês (1 a 31).</span>
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label class="input-label" for="categoria">Categoria</label>
-                <select 
-                  id="categoria"
-                  v-model="formDespesa.categoriaId" 
-                  class="input-control select-control"
-                  :class="{ 'valid': isCategoriaValid }"
-                  :disabled="isSubmitting"
-                  required
+            <!-- Categoria -->
+            <div class="form-group categoria-col">
+              <label class="input-label" for="categoria">Categoria</label>
+              <select 
+                id="categoria"
+                v-model="formDespesa.categoriaId" 
+                class="input-control select-control"
+                :class="{ 'valid': isCategoriaValid }"
+                :disabled="isSubmitting"
+                required
+              >
+                <option value="" disabled>Selecione uma categoria</option>
+                <option 
+                  v-for="cat in categorias" 
+                  :key="cat.id" 
+                  :value="cat.id"
                 >
-                  <option value="" disabled>Selecione uma categoria</option>
-                  <option 
-                    v-for="cat in categorias" 
-                    :key="cat.id" 
-                    :value="cat.id"
-                  >
-                    {{ cat.icone }} {{ cat.nome }}
-                  </option>
-                </select>
-                <span class="input-hint">Grupo de gastos da despesa.</span>
-              </div>
+                  {{ cat.icone }} {{ cat.nome }}
+                </option>
+              </select>
+              <span class="input-hint">Grupo de gastos da despesa.</span>
+            </div>
 
-              <div class="form-actions">
-                <button 
-                  type="button" 
-                  class="btn btn-secondary" 
-                  :disabled="isSubmitting"
-                  @click="cancelEdit"
-                >
-                  {{ editMode ? 'Cancelar' : 'Limpar' }}
-                </button>
-                <button 
-                  type="submit" 
-                  class="btn btn-primary submit-btn"
-                  :disabled="isSubmitting || !isDescricaoValid || !isValorValid || !isCategoriaValid || !isDiaVencimentoValid"
-                >
-                  <span v-if="isSubmitting" class="spinner-icon">🔄</span>
-                  <span>{{ isSubmitting ? 'Salvando...' : (editMode ? 'Salvar Alterações' : 'Salvar Despesa') }}</span>
-                </button>
-              </div>
-            </form>
+            <!-- Valor -->
+            <div class="form-group valor-col">
+              <label class="input-label" for="valor">Valor (R$)</label>
+              <input 
+                id="valor"
+                type="text" 
+                inputmode="decimal"
+                v-model="valorExibido" 
+                @input="onValorInput($event)"
+                @click="onValorClick($event)"
+                @keyup="onValorKeyup($event)"
+                class="input-control" 
+                :class="{ 'valid': isValorValid, 'invalid': isValorInvalid }"
+                :disabled="isSubmitting"
+                placeholder="0,00"
+                required
+                @focus="onValorFocus($event)"
+                @blur="onValorBlur"
+              />
+              <span class="input-hint" :class="{ 'error': isValorInvalid }">
+                {{ isValorInvalid ? 'Valor numérico inválido.' : 'Valor da despesa.' }}
+              </span>
+            </div>
+
+            <!-- Dia Vencimento -->
+            <div class="form-group dia-col">
+              <label class="input-label" for="diaVencimento">Dia Vencimento</label>
+              <input 
+                id="diaVencimento"
+                type="number" 
+                min="1"
+                max="31"
+                v-model.number="formDespesa.diaVencimento" 
+                class="input-control" 
+                :class="{ 'valid': isDiaVencimentoValid }"
+                :disabled="isSubmitting"
+                placeholder="10"
+                required
+              />
+              <span class="input-hint">Dia do mês (1 a 31).</span>
+            </div>
           </div>
 
-          <!-- Listagem de Templates de Despesas Fixas -->
-          <div class="glass-panel list-section" style="padding: 1.5rem;">
-            <h3 class="card-title">Despesas Cadastradas</h3>
-            
-            <div v-if="loadingTemplates" class="skeleton-list">
-              <div class="skeleton-block skeleton-row" v-for="i in 3" :key="i"></div>
-            </div>
-            <div v-else-if="templates.length === 0" class="empty-widget-state">
-              <span>📌</span>
-              <p>Nenhuma despesa fixa cadastrada.</p>
-            </div>
-            
-            <div v-else class="upcoming-list">
-              <div v-for="item in templates" :key="item.id" class="upcoming-item" style="padding: 0.85rem 1rem;">
-                <div class="upcoming-info">
-                  <span class="upcoming-emoji">{{ item.categoria?.icone || '📌' }}</span>
-                  <div class="upcoming-details">
-                    <strong>{{ item.descricao }}</strong>
-                    <span>Vence todo dia {{ item.diaVencimento }}</span>
-                  </div>
+          <div class="form-actions" style="margin-top: 1.5rem; justify-content: flex-end;">
+            <button 
+              type="button" 
+              class="btn btn-secondary" 
+              :disabled="isSubmitting"
+              @click="cancelEdit"
+            >
+              {{ editMode ? 'Cancelar' : 'Limpar' }}
+            </button>
+            <button 
+              type="submit" 
+              class="btn btn-primary submit-btn"
+              :disabled="isSubmitting || !isDescricaoValid || !isValorValid || !isCategoriaValid || !isDiaVencimentoValid"
+            >
+              <span v-if="isSubmitting" class="spinner-icon">🔄</span>
+              <span>{{ isSubmitting ? 'Salvando...' : (editMode ? 'Salvar Alterações' : 'Salvar Despesa') }}</span>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Grid Horizontal de Listas -->
+      <section class="despesas-lists-grid">
+        <!-- Coluna Esquerda: Listagem de Templates de Despesas Fixas -->
+        <div class="glass-panel list-section" style="padding: 1.5rem;">
+          <h3 class="card-title">Despesas Cadastradas</h3>
+          
+          <div v-if="loadingTemplates" class="skeleton-list">
+            <div class="skeleton-block skeleton-row" v-for="i in 3" :key="i"></div>
+          </div>
+          <div v-else-if="templates.length === 0" class="empty-widget-state">
+            <span>📌</span>
+            <p>Nenhuma despesa fixa cadastrada.</p>
+          </div>
+          
+          <div v-else class="upcoming-list">
+            <div v-for="item in templates" :key="item.id" class="upcoming-item" style="padding: 0.85rem 1rem;">
+              <div class="upcoming-info">
+                <span class="upcoming-emoji">{{ item.categoria?.icone || '📌' }}</span>
+                <div class="upcoming-details">
+                  <strong>{{ item.descricao }}</strong>
+                  <span>Vence todo dia {{ item.diaVencimento }}</span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                  <strong class="upcoming-value">{{ formatCurrency(item.valor) }}</strong>
-                  <div style="display: flex; gap: 0.25rem;">
-                    <button class="action-btn edit" @click="startEdit(item)" title="Editar">✏️</button>
-                    <button class="action-btn delete" @click="deleteDespesa(item)" title="Excluir">❌</button>
-                  </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 1rem;">
+                <strong class="upcoming-value">{{ formatCurrency(item.valor) }}</strong>
+                <div style="display: flex; gap: 0.25rem;">
+                  <button class="action-btn edit" @click="startEdit(item)" title="Editar">✏️</button>
+                  <button class="action-btn delete" @click="deleteDespesa(item)" title="Excluir">❌</button>
                 </div>
               </div>
             </div>
@@ -213,7 +216,8 @@
             </div>
           </div>
         </div>
-      </div>
+      </section>
+
     </main>
 
     <!-- CONFIRM MODAL -->
@@ -526,6 +530,37 @@ export default {
 }
 </script>
 
-<style>
+<style scoped>
 /* Os estilos globais e utilitários são gerenciados centralmente pelo src/style.css */
+
+/* Layout otimizado da View de Despesas Fixas */
+.despesas-form-grid {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.despesas-lists-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+/* Responsividade (Caso a tela não seja ultra larga, pode empilhar o formulário melhor) */
+@media (max-width: 1024px) {
+  .despesas-form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .despesas-form-grid {
+    grid-template-columns: 1fr;
+  }
+  .despesas-lists-grid {
+    grid-template-columns: 1fr;
+  }
+}
 </style>
