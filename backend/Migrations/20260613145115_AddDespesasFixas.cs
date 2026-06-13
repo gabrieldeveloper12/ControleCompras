@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -26,7 +26,7 @@ namespace backend.Migrations
                     Descricao = table.Column<string>(type: "TEXT", maxLength: 150, nullable: false),
                     Valor = table.Column<double>(type: "REAL", nullable: false),
                     DiaVencimento = table.Column<int>(type: "INTEGER", nullable: false),
-                    Ativa = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: true),
+                    Ativa = table.Column<bool>(nullable: false, defaultValue: true),
                     DataCriacao = table.Column<DateTime>(type: "TEXT", nullable: false),
                     CategoriaId = table.Column<int>(type: "INTEGER", nullable: false),
                     UsuarioId = table.Column<int>(type: "INTEGER", nullable: false)
@@ -57,7 +57,7 @@ namespace backend.Migrations
                     DespesaFixaId = table.Column<int>(type: "INTEGER", nullable: false),
                     Mes = table.Column<int>(type: "INTEGER", nullable: false),
                     Ano = table.Column<int>(type: "INTEGER", nullable: false),
-                    Pago = table.Column<bool>(type: "INTEGER", nullable: false),
+                    Pago = table.Column<bool>(nullable: false),
                     DataPagamento = table.Column<DateTime>(type: "TEXT", nullable: true),
                     ValorPago = table.Column<double>(type: "REAL", nullable: false),
                     CompraGeradaId = table.Column<int>(type: "INTEGER", nullable: true)
