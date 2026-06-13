@@ -1,9 +1,6 @@
 <template>
   <header class="header glass-panel animate-fade-in">
     <div class="header-left">
-      <button class="hamburger-btn" @click="toggleMobileMenu" title="Abrir Menu">
-        ☰
-      </button>
       <div class="logo">
         <span class="logo-emoji">💸</span>
         <div class="logo-text">
@@ -114,9 +111,6 @@ export default {
   },
 
   methods: {
-    toggleMobileMenu() {
-      window.dispatchEvent(new CustomEvent('cc-toggle-mobile-menu'))
-    },
     toggleDropdown() {
       this.dropdownOpen = !this.dropdownOpen
       this.userDropdownOpen = false // close other
@@ -184,28 +178,7 @@ export default {
   gap: 1rem;
 }
 
-.hamburger-btn {
-  display: none;
-  background: var(--surface-2);
-  border: 1px solid var(--border-glass);
-  color: var(--text-primary);
-  font-size: 1.5rem;
-  cursor: pointer;
-  padding: 0.4rem 0.75rem;
-  border-radius: var(--radius-sm);
-  line-height: 1;
-  transition: background 0.2s ease;
-}
 
-.hamburger-btn:hover {
-  background: var(--surface-4);
-}
-
-@media (max-width: 768px) {
-  .hamburger-btn {
-    display: block;
-  }
-}
 
 .logo {
   display: flex;
@@ -406,17 +379,5 @@ export default {
   background: rgba(255, 59, 48, 0.15) !important;
 }
 
-/* ── Responsive ── */
-@media (max-width: 600px) {
-  .header {
-    flex-direction: column;
-    gap: 1rem;
-    padding: 1.2rem;
-    align-items: flex-start;
-  }
 
-  .header-right {
-    align-self: flex-end;
-  }
-}
 </style>
