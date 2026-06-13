@@ -36,6 +36,7 @@
                   @input="onValorInput($event)"
                   @click="onValorClick($event)"
                   @keyup="onValorKeyup($event)"
+                  @keydown.enter.prevent
                   class="input-control" 
                   :class="{ 'valid': isValorValid, 'invalid': isValorInvalid }"
                   :disabled="isSubmitting"
