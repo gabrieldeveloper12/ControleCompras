@@ -17,4 +17,8 @@ public class Compra
     public int? TotalParcelas { get; set; }
     public int? NumeroParcela { get; set; }
     public Guid? GrupoParcelaId { get; set; }
+
+    public int? PagamentoDespesaFixaId { get; set; }
+    public PagamentoDespesaFixa? PagamentoDespesaFixa { get; set; }
 }
+

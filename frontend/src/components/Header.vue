@@ -1,10 +1,15 @@
 <template>
   <header class="header glass-panel animate-fade-in">
-    <div class="logo">
-      <span class="logo-emoji">💸</span>
-      <div class="logo-text">
-        <h1>Controle de Compras</h1>
-        <p>Gestão Pessoal de Gastos</p>
+    <div class="header-left">
+      <button class="hamburger-btn" @click="toggleMobileMenu" title="Abrir Menu">
+        ☰
+      </button>
+      <div class="logo">
+        <span class="logo-emoji">💸</span>
+        <div class="logo-text">
+          <h1>Controle de Compras</h1>
+          <p>Gestão Pessoal de Gastos</p>
+        </div>
       </div>
     </div>
 
@@ -109,6 +114,9 @@ export default {
   },
 
   methods: {
+    toggleMobileMenu() {
+      window.dispatchEvent(new CustomEvent('cc-toggle-mobile-menu'))
+    },
     toggleDropdown() {
       this.dropdownOpen = !this.dropdownOpen
       this.userDropdownOpen = false // close other
@@ -168,6 +176,35 @@ export default {
   background: var(--bg-card);
   position: relative;
   z-index: 1000;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.hamburger-btn {
+  display: none;
+  background: var(--surface-2);
+  border: 1px solid var(--border-glass);
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-sm);
+  line-height: 1;
+  transition: background 0.2s ease;
+}
+
+.hamburger-btn:hover {
+  background: var(--surface-4);
+}
+
+@media (max-width: 768px) {
+  .hamburger-btn {
+    display: block;
+  }
 }
 
 .logo {

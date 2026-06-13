@@ -436,8 +436,230 @@ app.MapDelete("/api/compras/{id:int}", async (ClaimsPrincipal user, int id, Comp
     return Results.NoContent();
 }).RequireAuthorization();
 
+// ==========================================
+// ENDPOINTS DE DESPESAS FIXAS
+// ==========================================
+
+// Listar despesas fixas
+app.MapGet("/api/despesas-fixas", async (ClaimsPrincipal user, ComprasDbContext db) =>
+{
+    var userId = int.Parse(user.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+    var despesas = await db.DespesasFixas
+        .Include(df => df.Categoria)
+        .Where(df => df.UsuarioId == userId && df.Ativa)
+        .OrderBy(df => df.DiaVencimento)
+        .ToListAsync();
+    return Results.Ok(despesas);
+}).RequireAuthorization();
+
+// Criar nova despesa fixa
+app.MapPost("/api/despesas-fixas", async (ClaimsPrincipal user, CriarDespesaFixaRequest req, ComprasDbContext db) =>
+{
+    var userId = int.Parse(user.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+    if (string.IsNullOrWhiteSpace(req.Descricao) || req.Descricao.Length < 3)
+        return Results.BadRequest("Descrição deve ter pelo menos 3 caracteres.");
+    if (req.Valor <= 0)
+        return Results.BadRequest("Valor deve ser maior que zero.");
+    if (req.DiaVencimento < 1 || req.DiaVencimento > 31)
+        return Results.BadRequest("Dia de vencimento deve ser entre 1 e 31.");
+
+    var despesa = new DespesaFixa
+    {
+        Descricao = req.Descricao,
+        Valor = req.Valor,
+        DiaVencimento = req.DiaVencimento,
+        CategoriaId = req.CategoriaId,
+        UsuarioId = userId,
+        Ativa = true,
+        DataCriacao = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc)
+    };
+
+    db.DespesasFixas.Add(despesa);
+    await db.SaveChangesAsync();
+
+    await db.Entry(despesa).Reference(df => df.Categoria).LoadAsync();
+    return Results.Created($"/api/despesas-fixas/{despesa.Id}", despesa);
+}).RequireAuthorization();
+
+// Editar despesa fixa
+app.MapPut("/api/despesas-fixas/{id:int}", async (ClaimsPrincipal user, int id, CriarDespesaFixaRequest req, ComprasDbContext db) =>
+{
+    var userId = int.Parse(user.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+    var despesa = await db.DespesasFixas.FirstOrDefaultAsync(df => df.Id == id && df.UsuarioId == userId);
+    if (despesa is null) return Results.NotFound();
+
+    if (string.IsNullOrWhiteSpace(req.Descricao) || req.Descricao.Length < 3)
+        return Results.BadRequest("Descrição deve ter pelo menos 3 caracteres.");
+    if (req.Valor <= 0)
+        return Results.BadRequest("Valor deve ser maior que zero.");
+    if (req.DiaVencimento < 1 || req.DiaVencimento > 31)
+        return Results.BadRequest("Dia de vencimento deve ser entre 1 e 31.");
+
+    despesa.Descricao = req.Descricao;
+    despesa.Valor = req.Valor;
+    despesa.DiaVencimento = req.DiaVencimento;
+    despesa.CategoriaId = req.CategoriaId;
+
+    await db.SaveChangesAsync();
+    return Results.NoContent();
+}).RequireAuthorization();
+
+// Excluir (inativar) despesa fixa
+app.MapDelete("/api/despesas-fixas/{id:int}", async (ClaimsPrincipal user, int id, ComprasDbContext db) =>
+{
+    var userId = int.Parse(user.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+    var despesa = await db.DespesasFixas.FirstOrDefaultAsync(df => df.Id == id && df.UsuarioId == userId);
+    if (despesa is null) return Results.NotFound();
+
+    despesa.Ativa = false;
+    await db.SaveChangesAsync();
+    return Results.NoContent();
+}).RequireAuthorization();
+
+// Listar pagamentos mensais
+app.MapGet("/api/despesas-fixas/pagamentos", async (ClaimsPrincipal user, int mes, int ano, ComprasDbContext db) =>
+{
+    var userId = int.Parse(user.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+    // Despesas fixas ativas criadas até o mês/ano solicitado (simplificado para o dia 28 para evitar erros de borda)
+    var despesasAtivas = await db.DespesasFixas
+        .Include(df => df.Categoria)
+        .Where(df => df.UsuarioId == userId && df.Ativa && df.DataCriacao <= DateTime.SpecifyKind(new DateTime(ano, mes, 28), DateTimeKind.Utc))
+        .ToListAsync();
+
+    var pagamentos = await db.PagamentosDespesasFixas
+        .Include(p => p.CompraGerada)
+        .Where(p => p.DespesaFixa!.UsuarioId == userId && p.Mes == mes && p.Ano == ano)
+        .ToListAsync();
+
+    var result = despesasAtivas.Select(df =>
+    {
+        var pagamento = pagamentos.FirstOrDefault(p => p.DespesaFixaId == df.Id);
+        return new
+        {
+            DespesaFixaId = df.Id,
+            Descricao = df.Descricao,
+            ValorOriginal = df.Valor,
+            DiaVencimento = df.DiaVencimento,
+            Categoria = df.Categoria,
+            Pago = pagamento != null && pagamento.Pago,
+            DataPagamento = pagamento?.DataPagamento,
+            ValorPago = pagamento != null ? pagamento.ValorPago : df.Valor,
+            CompraGeradaId = pagamento?.CompraGeradaId
+        };
+    }).OrderBy(x => x.DiaVencimento).ToList();
+
+    return Results.Ok(result);
+}).RequireAuthorization();
+
+// Alternar status de pagamento (Marcar Pago / Estornar)
+app.MapPost("/api/despesas-fixas/pagamentos/toggle", async (ClaimsPrincipal user, TogglePagamentoRequest req, ComprasDbContext db) =>
+{
+    var userId = int.Parse(user.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+    var despesa = await db.DespesasFixas.FirstOrDefaultAsync(df => df.Id == req.DespesaFixaId && df.UsuarioId == userId);
+    if (despesa is null) return Results.BadRequest("Despesa fixa não encontrada.");
+
+    var pagamento = await db.PagamentosDespesasFixas
+        .Include(p => p.CompraGerada)
+        .FirstOrDefaultAsync(p => p.DespesaFixaId == req.DespesaFixaId && p.Mes == req.Mes && p.Ano == req.Ano);
+
+    if (pagamento != null && pagamento.Pago)
+    {
+        // Estornar pagamento (deletar compra automática e registro de pagamento)
+        if (pagamento.CompraGeradaId.HasValue)
+        {
+            var compra = await db.Compras.FirstOrDefaultAsync(c => c.Id == pagamento.CompraGeradaId.Value && c.UsuarioId == userId);
+            if (compra != null)
+            {
+                db.Compras.Remove(compra);
+            }
+        }
+        db.PagamentosDespesasFixas.Remove(pagamento);
+        await db.SaveChangesAsync();
+        return Results.Ok(new { pago = false });
+    }
+    else
+    {
+        // Marcar como pago
+        var dataPagamento = req.DataPagamento ?? DateTime.UtcNow;
+        
+        // 1. Criar Compra automática
+        var compra = new Compra
+        {
+            Descricao = $"{despesa.Descricao} (Fixo)",
+            Valor = req.ValorPago ?? despesa.Valor,
+            Data = DateTime.SpecifyKind(dataPagamento, DateTimeKind.Utc),
+            CategoriaId = despesa.CategoriaId,
+            UsuarioId = userId,
+            FormaPagamento = "pix",
+            TotalParcelas = null,
+            NumeroParcela = null,
+            GrupoParcelaId = null
+        };
+        db.Compras.Add(compra);
+        await db.SaveChangesAsync(); // gera o Id da Compra
+
+        // 2. Criar registro de PagamentoDespesaFixa
+        var novoPagamento = new PagamentoDespesaFixa
+        {
+            DespesaFixaId = despesa.Id,
+            Mes = req.Mes,
+            Ano = req.Ano,
+            Pago = true,
+            DataPagamento = DateTime.SpecifyKind(dataPagamento, DateTimeKind.Utc),
+            ValorPago = req.ValorPago ?? despesa.Valor,
+            CompraGeradaId = compra.Id
+        };
+        db.PagamentosDespesasFixas.Add(novoPagamento);
+        await db.SaveChangesAsync();
+
+        // 3. Vincular a compra de volta ao pagamento
+        compra.PagamentoDespesaFixaId = novoPagamento.Id;
+        await db.SaveChangesAsync();
+
+        return Results.Ok(new { pago = true, compraId = compra.Id });
+    }
+}).RequireAuthorization();
+
+// Obter próximos vencimentos do mês corrente
+app.MapGet("/api/despesas-fixas/proximos-vencimentos", async (ClaimsPrincipal user, ComprasDbContext db) =>
+{
+    var userId = int.Parse(user.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+    var agora = DateTime.UtcNow;
+    var mes = agora.Month;
+    var ano = agora.Year;
+
+    var despesasAtivas = await db.DespesasFixas
+        .Include(df => df.Categoria)
+        .Where(df => df.UsuarioId == userId && df.Ativa)
+        .ToListAsync();
+
+    var pagamentosEfetuadosIds = await db.PagamentosDespesasFixas
+        .Where(p => p.DespesaFixa!.UsuarioId == userId && p.Mes == mes && p.Ano == ano && p.Pago)
+        .Select(p => p.DespesaFixaId)
+        .ToListAsync();
+
+    var proximosVencimentos = despesasAtivas
+        .Where(df => !pagamentosEfetuadosIds.Contains(df.Id))
+        .Select(df => new
+        {
+            df.Id,
+            df.Descricao,
+            df.Valor,
+            df.DiaVencimento,
+            Categoria = df.Categoria
+        })
+        .OrderBy(df => df.DiaVencimento)
+        .ToList();
+
+    return Results.Ok(proximosVencimentos);
+}).RequireAuthorization();
+
 app.Run();
 
 public record LoginRequest(string Email, string Password);
 public record RegisterRequest(string Email, string Password, string Nome);
 public record CriarCompraRequest(string Descricao, decimal ValorTotal, DateTime Data, int CategoriaId, string? FormaPagamento, int? TotalParcelas);
+public record CriarDespesaFixaRequest(string Descricao, decimal Valor, int DiaVencimento, int CategoriaId);
+public record TogglePagamentoRequest(int DespesaFixaId, int Mes, int Ano, DateTime? DataPagamento, decimal? ValorPago);
+

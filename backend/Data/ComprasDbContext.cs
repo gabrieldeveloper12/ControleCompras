@@ -12,6 +12,8 @@ public class ComprasDbContext : DbContext
     public DbSet<Categoria> Categorias => Set<Categoria>();
     public DbSet<Compra> Compras => Set<Compra>();
     public DbSet<Usuario> Usuarios => Set<Usuario>();
+    public DbSet<DespesaFixa> DespesasFixas => Set<DespesaFixa>();
+    public DbSet<PagamentoDespesaFixa> PagamentosDespesasFixas => Set<PagamentoDespesaFixa>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -60,5 +62,47 @@ public class ComprasDbContext : DbContext
             entity.Property(u => u.SenhaHash).IsRequired();
             entity.Property(u => u.Nome).IsRequired().HasMaxLength(100);
         });
+
+        // Configuração da entidade DespesaFixa
+        modelBuilder.Entity<DespesaFixa>(entity =>
+        {
+            entity.HasKey(df => df.Id);
+            entity.Property(df => df.Descricao).IsRequired().HasMaxLength(150);
+            entity.Property(df => df.Valor).HasConversion<double>();
+            entity.Property(df => df.DiaVencimento).IsRequired();
+            entity.Property(df => df.Ativa).HasDefaultValue(true);
+            entity.Property(df => df.DataCriacao).IsRequired();
+
+            entity.HasOne(df => df.Categoria)
+                  .WithMany()
+                  .HasForeignKey(df => df.CategoriaId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(df => df.Usuario)
+                  .WithMany()
+                  .HasForeignKey(df => df.UsuarioId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuração da entidade PagamentoDespesaFixa
+        modelBuilder.Entity<PagamentoDespesaFixa>(entity =>
+        {
+            entity.HasKey(pdf => pdf.Id);
+            entity.Property(pdf => pdf.Mes).IsRequired();
+            entity.Property(pdf => pdf.Ano).IsRequired();
+            entity.Property(pdf => pdf.Pago).IsRequired();
+            entity.Property(pdf => pdf.ValorPago).HasConversion<double>();
+
+            entity.HasOne(pdf => pdf.DespesaFixa)
+                  .WithMany(df => df.Pagamentos)
+                  .HasForeignKey(pdf => pdf.DespesaFixaId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(pdf => pdf.CompraGerada)
+                  .WithOne(c => c.PagamentoDespesaFixa)
+                  .HasForeignKey<Compra>(c => c.PagamentoDespesaFixaId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
     }
+
 }

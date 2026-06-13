@@ -1,5 +1,8 @@
 <template>
-  <router-view />
+  <MainLayout v-if="route.meta.layout === 'main'">
+    <router-view />
+  </MainLayout>
+  <router-view v-else />
 
   <!-- Premium Toast Notifications Overlay -->
   <div class="toast-container">
@@ -24,8 +27,12 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { useRoute } from 'vue-router'
+import MainLayout from './components/MainLayout.vue'
 
+const route = useRoute()
 const toasts = ref([])
+
 
 function handleToast(event) {
   const { message, type = 'success', duration = 3000 } = event.detail

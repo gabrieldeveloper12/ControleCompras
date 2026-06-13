@@ -12,7 +12,20 @@ const router = createRouter({
     {
       path: '/dashboard',
       name: 'dashboard',
-      component: () => import('../views/DashboardView.vue')
+      component: () => import('../views/DashboardView.vue'),
+      meta: { layout: 'main' }
+    },
+    {
+      path: '/compras',
+      name: 'compras',
+      component: () => import('../views/ComprasView.vue'),
+      meta: { layout: 'main' }
+    },
+    {
+      path: '/despesas-fixas',
+      name: 'despesas-fixas',
+      component: () => import('../views/DespesasFixasView.vue'),
+      meta: { layout: 'main' }
     },
     {
       path: '/login',
