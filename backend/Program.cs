@@ -294,11 +294,22 @@ app.MapGet("/api/compras", async (
         query = query.Where(c => c.Data < dataFim);
     }
 
-    if (mes.HasValue)
+    if (mes.HasValue && ano.HasValue)
+    {
+        var dataInicioMes = new DateTime(ano.Value, mes.Value, 1, 0, 0, 0, DateTimeKind.Utc);
+        var dataFimMes = dataInicioMes.AddMonths(1);
+        query = query.Where(c => c.Data >= dataInicioMes && c.Data < dataFimMes);
+    }
+    else if (ano.HasValue)
+    {
+        var dataInicioAno = new DateTime(ano.Value, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var dataFimAno = dataInicioAno.AddYears(1);
+        query = query.Where(c => c.Data >= dataInicioAno && c.Data < dataFimAno);
+    }
+    else if (mes.HasValue)
+    {
         query = query.Where(c => c.Data.Month == mes.Value);
-
-    if (ano.HasValue)
-        query = query.Where(c => c.Data.Year == ano.Value);
+    }
 
     var resultado = await query.OrderByDescending(c => c.Data).ToListAsync();
     return Results.Ok(resultado);
