@@ -1,8 +1,5 @@
 <template>
-  <div class="app-container">
-    <!-- Header Component -->
-    <Header :is-online="isOnline" />
-
+  <div class="page-content">
     <main class="main-content">
       <!-- DATA INTERACTION ROW (FORM & FILTERS) -->
       <section class="interaction-grid animate-fade-in" style="animation-delay: 0.1s">
@@ -735,7 +732,6 @@
 </template>
 
 <script>
-import Header from '../components/Header.vue';
 import { useAuthStore } from '../stores/auth';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5076';
@@ -743,12 +739,8 @@ const API_BASE = `${BASE_URL}/api`;
 
 export default {
   name: 'ComprasView',
-  components: {
-    Header
-  },
   data() {
     return {
-      isOnline: false,
       categorias: [],
       compras: [],
       
@@ -1073,14 +1065,6 @@ export default {
         currency: 'BRL'
       }).format(val);
     },
-    async checkApiStatus() {
-      try {
-        const res = await fetch(BASE_URL);
-        this.isOnline = res.ok;
-      } catch (err) {
-        this.isOnline = false;
-      }
-    },
     async fetchWithAuth(url, options = {}) {
       const authStore = useAuthStore();
       const headers = { ...options.headers };
@@ -1367,16 +1351,9 @@ export default {
     }
   },
   async mounted() {
-    await this.checkApiStatus();
-    if (this.isOnline) {
-      await this.fetchCategorias();
-      await this.fetchCompras();
-    }
+    await this.fetchCategorias();
+    await this.fetchCompras();
     this.isLoading = false;
-    
-    setInterval(async () => {
-      await this.checkApiStatus();
-    }, 10000);
 
     this.$nextTick(() => {
       const inputDesc = document.getElementById('descricao');

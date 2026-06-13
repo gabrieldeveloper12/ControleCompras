@@ -38,20 +38,45 @@
 
     <!-- Page Content Wrapper -->
     <div class="content-wrapper">
+      <!-- Header integrado ao layout -->
+      <Header :is-online="isOnline" />
       <slot></slot>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
+import Header from './Header.vue'
 
 const isCollapsed = ref(localStorage.getItem('cc-sidebar-collapsed') === 'true')
+
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5076'
+const isOnline = ref(false)
+let apiCheckInterval = null
+
+async function checkApiStatus() {
+  try {
+    const res = await fetch(BASE_URL)
+    isOnline.value = res.ok
+  } catch {
+    isOnline.value = false
+  }
+}
 
 function toggleCollapse() {
   isCollapsed.value = !isCollapsed.value
   localStorage.setItem('cc-sidebar-collapsed', isCollapsed.value)
 }
+
+onMounted(async () => {
+  await checkApiStatus()
+  apiCheckInterval = setInterval(checkApiStatus, 10000)
+})
+
+onBeforeUnmount(() => {
+  if (apiCheckInterval) clearInterval(apiCheckInterval)
+})
 </script>
 
 <style scoped>

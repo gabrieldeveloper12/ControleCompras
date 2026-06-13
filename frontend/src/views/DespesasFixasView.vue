@@ -1,8 +1,5 @@
 <template>
-  <div class="app-container">
-    <!-- Header Component -->
-    <Header :is-online="isOnline" />
-
+  <div class="page-content">
     <main class="main-content">
       <div class="dashboard-grid animate-fade-in">
         <!-- Coluna Esquerda: Gerenciamento dos Templates de Despesas Fixas -->
@@ -241,7 +238,6 @@
 </template>
 
 <script>
-import Header from '../components/Header.vue';
 import { useAuthStore } from '../stores/auth';
 import { DespesasFixasService } from '../services/despesasFixasService';
 
@@ -250,12 +246,8 @@ const API_BASE = `${BASE_URL}/api`;
 
 export default {
   name: 'DespesasFixasView',
-  components: {
-    Header
-  },
   data() {
     return {
-      isOnline: false,
       categorias: [],
       templates: [],
       pagamentos: [],
@@ -374,14 +366,6 @@ export default {
         this.confirmModal.resolve = resolve;
         this.confirmModal.show = true;
       });
-    },
-    async checkApiStatus() {
-      try {
-        const res = await fetch(BASE_URL);
-        this.isOnline = res.ok;
-      } catch (err) {
-        this.isOnline = false;
-      }
     },
     async fetchWithAuth(url, options = {}) {
       const authStore = useAuthStore();
@@ -535,12 +519,9 @@ export default {
     }
   },
   async mounted() {
-    await this.checkApiStatus();
-    if (this.isOnline) {
-      await this.fetchCategorias();
-      await this.fetchTemplates();
-      await this.fetchPagamentos();
-    }
+    await this.fetchCategorias();
+    await this.fetchTemplates();
+    await this.fetchPagamentos();
   }
 }
 </script>
