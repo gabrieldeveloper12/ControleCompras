@@ -669,7 +669,7 @@ app.MapGet("/api/despesas-fixas/proximos-vencimentos", async (ClaimsPrincipal us
 app.Run();
 
 public record LoginRequest(string Email, string Password);
-public record RegisterRequest(string Email, string Password, string Nome);
+public record RegisterRequest(string Email, string Password, string? Nome);
 public record CriarCompraRequest(string Descricao, decimal ValorTotal, DateTime Data, int CategoriaId, string? FormaPagamento, int? TotalParcelas);
 public record CriarDespesaFixaRequest(string Descricao, decimal Valor, int DiaVencimento, int CategoriaId);
 public record TogglePagamentoRequest(int DespesaFixaId, int Mes, int Ano, DateTime? DataPagamento, decimal? ValorPago);
